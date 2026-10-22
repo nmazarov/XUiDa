@@ -1,0 +1,55 @@
+name: Build XUiDa64 Standalone Executable
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Generate brand assets
+      run: |
+        python generate_assets.py
+
+    - name: Build Standalone Executable
+      run: |
+        python build_exe.py
+
+    - name: Archive build artifacts
+      run: |
+        Compress-Archive -Path dist\XUiDa64 -DestinationPath XUiDa64-win64.zip
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: XUiDa64-Windows-x64
+        path: XUiDa64-win64.zip
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: XUiDa64-win64.zip
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

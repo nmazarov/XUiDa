@@ -42,6 +42,7 @@ class NavigationTree(QTreeWidget):
                 ("nav_summary", "Summary"),
                 ("nav_computer_name", "Computer Name"),
                 ("nav_power", "Power Management"),
+                ("nav_battery", "Battery"),
                 ("nav_sensors", "Sensors")
             ]),
             ("cat_motherboard", "cat_motherboard.png", [

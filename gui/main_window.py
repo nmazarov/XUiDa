@@ -5,11 +5,12 @@ Recreates iconic AIDA64 interface with responsive category switching, live telem
 
 import os
 import webbrowser
+import time
 import psutil
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
     QStackedWidget, QMenuBar, QMenu, QAction, QToolBar, QStatusBar,
-    QLabel, QProgressBar, QMessageBox, QActionGroup, QFrame
+    QLabel, QProgressBar, QMessageBox, QActionGroup, QFrame, QSystemTrayIcon
 )
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon, QFont, QPixmap
@@ -27,16 +28,22 @@ from gui.dialogs.stress_dialog import StressTestDialog
 from gui.dialogs.sensor_panel import DesktopSensorPanel
 from gui.dialogs.report_dialog import ReportWizardDialog
 from gui.dialogs.about_dialog import AboutDialog
+from gui.dialogs.disk_bench_dialog import DiskBenchDialog
+from gui.dialogs.gpu_bench_dialog import GPUBenchDialog
+from gui.dialogs.monitor_diag_dialog import MonitorDiagDialog
+from gui.dialogs.share_dialog import ShareConfigDialog
 
 from core.system_info import SystemInfo
 from core.cpu_info import CPUInfo
 from core.cpuid import CPUID
 from core.memory_info import MemoryInfo
+from core.battery_info import BatteryInfo
 from core.gpu_info import GPUInfo
 from core.storage_info import StorageInfo
 from core.network_info import NetworkInfo
 from core.devices_info import DevicesInfo
 from core.software_info import SoftwareInfo
+from core.sensors import Sensors
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -55,11 +62,13 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(DARK_THEME)
 
         self.sensor_panel = None
+        self.last_thermal_alert = 0
 
         # Build UI Elements
         self._init_menu_and_toolbar()
         self._init_central_ui()
         self._init_status_bar()
+        self._init_system_tray()
 
         # Connect Navigation
         self.tree.currentItemChanged.connect(self.on_nav_selected)
@@ -112,6 +121,24 @@ class MainWindow(QMainWindow):
         self.act_bench = self.tools_menu.addAction(_t("act_bench"))
         self.act_bench.triggered.connect(lambda: self._select_tree_item("Memory Read"))
 
+        self.tools_menu.addSeparator()
+
+        self.act_disk_bench = self.tools_menu.addAction(_t("act_disk_bench"))
+        self.act_disk_bench.triggered.connect(self.open_disk_bench)
+
+        self.act_gpu_bench = self.tools_menu.addAction(_t("act_gpu_bench"))
+        self.act_gpu_bench.triggered.connect(self.open_gpu_bench)
+
+        self.act_monitor_diag = self.tools_menu.addAction(_t("act_monitor_diag"))
+        self.act_monitor_diag.setShortcut("F11")
+        self.act_monitor_diag.triggered.connect(self.open_monitor_diag)
+
+        self.tools_menu.addSeparator()
+
+        self.act_share = self.tools_menu.addAction(_t("act_share"))
+        self.act_share.setShortcut("Ctrl+S")
+        self.act_share.triggered.connect(self.open_share_dialog)
+
         # Language Menu
         self.lang_menu = self.menu_bar.addMenu(_t("menu_language"))
         self.lang_group = QActionGroup(self)
@@ -158,8 +185,20 @@ class MainWindow(QMainWindow):
         self.btn_bench = self.toolbar.addAction(_t("tb_benchmarks"))
         self.btn_bench.triggered.connect(lambda: self._select_tree_item("Memory Read"))
 
+        self.btn_disk = self.toolbar.addAction(_t("tb_disk_bench"))
+        self.btn_disk.triggered.connect(self.open_disk_bench)
+
+        self.btn_gpu = self.toolbar.addAction(_t("tb_gpu_bench"))
+        self.btn_gpu.triggered.connect(self.open_gpu_bench)
+
+        self.btn_mon = self.toolbar.addAction(_t("tb_monitor"))
+        self.btn_mon.triggered.connect(self.open_monitor_diag)
+
         self.btn_osd = self.toolbar.addAction(_t("tb_sensor_osd"))
         self.btn_osd.triggered.connect(self.toggle_sensor_panel)
+
+        self.btn_share = self.toolbar.addAction(_t("tb_share"))
+        self.btn_share.triggered.connect(self.open_share_dialog)
 
         self.toolbar.addSeparator()
 
@@ -258,6 +297,48 @@ class MainWindow(QMainWindow):
 
         self._update_status_bar()
 
+    def _init_system_tray(self):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(base_dir, "assets", "icon.png")
+
+        self.tray_icon = QSystemTrayIcon(self)
+        if os.path.exists(icon_path):
+            self.tray_icon.setIcon(QIcon(icon_path))
+        self.tray_icon.setToolTip("XUiDa64 Extreme Edition")
+
+        tray_menu = QMenu()
+        act_show = tray_menu.addAction("XUiDa64 Extreme Edition")
+        act_show.triggered.connect(self._toggle_window)
+        tray_menu.addSeparator()
+
+        self.tray_stat_act = tray_menu.addAction("ЦП: --°C | ОЗУ: --%")
+        self.tray_stat_act.setEnabled(False)
+
+        act_osd = tray_menu.addAction(_t("act_osd"))
+        act_osd.triggered.connect(self.toggle_sensor_panel)
+
+        act_bench = tray_menu.addAction(_t("act_disk_bench"))
+        act_bench.triggered.connect(self.open_disk_bench)
+
+        tray_menu.addSeparator()
+        act_exit = tray_menu.addAction(_t("act_exit"))
+        act_exit.triggered.connect(self.close)
+
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self._on_tray_activated)
+        self.tray_icon.show()
+
+    def _on_tray_activated(self, reason):
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
+            self._toggle_window()
+
+    def _toggle_window(self):
+        if self.isMinimized() or not self.isVisible():
+            self.showNormal()
+            self.activateWindow()
+        else:
+            self.hide()
+
     def _update_status_bar(self):
         cpu_p = int(psutil.cpu_percent(interval=None))
         ram_p = int(psutil.virtual_memory().percent)
@@ -267,6 +348,35 @@ class MainWindow(QMainWindow):
 
         self.sb_ram_lbl.setText(f"{_t('ram_usage')}: {ram_p}%")
         self.sb_ram_bar.setValue(ram_p)
+
+        # Telemetry for tray & thermal alerts
+        try:
+            sensors_data = Sensors.get_all_sensors()
+            temps = sensors_data.get("Temperatures", [])
+            max_cpu_temp = None
+            for t in temps:
+                if t.get("Category") == "CPU" or "CPU" in t.get("Sensor", ""):
+                    v = t.get("Value")
+                    if v and (max_cpu_temp is None or v > max_cpu_temp):
+                        max_cpu_temp = v
+
+            temp_str = f"{max_cpu_temp:.0f}°C" if max_cpu_temp else "--°C"
+            tooltip_text = f"XUiDa64 Extreme Edition\nЦП: {cpu_p}% ({temp_str}) | ОЗУ: {ram_p}%"
+            self.tray_icon.setToolTip(tooltip_text)
+            self.tray_stat_act.setText(f"ЦП: {temp_str} ({cpu_p}%) | ОЗУ: {ram_p}%")
+
+            # Thermal Alert (> 85°C, debounced 60s)
+            now = time.time()
+            if max_cpu_temp and max_cpu_temp >= 85.0 and (now - self.last_thermal_alert > 60):
+                self.last_thermal_alert = now
+                self.tray_icon.showMessage(
+                    "⚠️ Предупреждение о перегреве!",
+                    f"Температура процессора достигла {max_cpu_temp:.1f}°C! Проверьте систему охлаждения.",
+                    QSystemTrayIcon.Warning,
+                    6000
+                )
+        except Exception:
+            pass
 
     def on_language_changed(self, lang):
         self.setWindowTitle(_t("app_title"))
@@ -285,6 +395,10 @@ class MainWindow(QMainWindow):
         self.act_cpuid.setText(_t("act_cpuid"))
         self.act_stress.setText(_t("act_stress"))
         self.act_bench.setText(_t("act_bench"))
+        self.act_disk_bench.setText(_t("act_disk_bench"))
+        self.act_gpu_bench.setText(_t("act_gpu_bench"))
+        self.act_monitor_diag.setText(_t("act_monitor_diag"))
+        self.act_share.setText(_t("act_share"))
         self.act_git.setText(_t("act_github"))
         self.act_about.setText(_t("act_about"))
 
@@ -292,6 +406,10 @@ class MainWindow(QMainWindow):
         self.btn_cpuid.setText(_t("tb_cpuid"))
         self.btn_stress.setText(_t("tb_stress"))
         self.btn_bench.setText(_t("tb_benchmarks"))
+        self.btn_disk.setText(_t("tb_disk_bench"))
+        self.btn_gpu.setText(_t("tb_gpu_bench"))
+        self.btn_mon.setText(_t("tb_monitor"))
+        self.btn_share.setText(_t("tb_share"))
         self.btn_osd.setText(_t("tb_sensor_osd"))
         self.btn_ref.setText(_t("tb_refresh"))
         self.btn_theme.setText(_t("tb_theme"))
@@ -360,6 +478,8 @@ class MainWindow(QMainWindow):
             })
         elif internal_id == "Power Management":
             self.table_view.set_data(SystemInfo.get_power_info())
+        elif internal_id in ("Battery", "Battery & Mobile Power"):
+            self.table_view.set_data(BatteryInfo.get_details())
         elif internal_id == "CPU":
             details = CPUInfo.get_details()
             self.table_view.set_data(details)
@@ -461,3 +581,24 @@ class MainWindow(QMainWindow):
     def open_about(self):
         dlg = AboutDialog(self)
         dlg.exec_()
+
+    def open_disk_bench(self):
+        dlg = DiskBenchDialog(self)
+        dlg.exec_()
+
+    def open_gpu_bench(self):
+        dlg = GPUBenchDialog(self)
+        dlg.exec_()
+
+    def open_monitor_diag(self):
+        dlg = MonitorDiagDialog(self)
+        dlg.exec_()
+
+    def open_share_dialog(self):
+        dlg = ShareConfigDialog(self)
+        dlg.exec_()
+
+    def closeEvent(self, event):
+        if hasattr(self, 'tray_icon') and self.tray_icon:
+            self.tray_icon.hide()
+        event.accept()
