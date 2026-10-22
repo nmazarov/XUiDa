@@ -1,6 +1,6 @@
 """
 XUiDa64 - Dynamic Property & Table View Widget
-Displays hardware properties with search, copy, and export capabilities.
+Displays hardware properties with multi-language support, search, copy, and export capabilities.
 """
 
 from PyQt5.QtWidgets import (
@@ -9,24 +9,35 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
+from core.i18n import I18N, _t
 
 class PropertyTableView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
 
-        # Top Bar: Search & Action Buttons
+        # Top Bar: Search, Count Badge & Action Buttons
         top_bar = QHBoxLayout()
-        top_bar.setContentsMargins(6, 6, 6, 0)
+        top_bar.setSpacing(8)
 
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("🔍 Filter properties (type to search)...")
+        self.search_input.setPlaceholderText(_t("filter_placeholder"))
         self.search_input.textChanged.connect(self._filter_rows)
         top_bar.addWidget(self.search_input)
 
-        self.copy_btn = QPushButton("📋 Copy All")
+        self.clear_btn = QPushButton("✕")
+        self.clear_btn.setFixedWidth(28)
+        self.clear_btn.setObjectName("secondaryBtn")
+        self.clear_btn.clicked.connect(self.search_input.clear)
+        top_bar.addWidget(self.clear_btn)
+
+        self.count_badge = QLabel("")
+        self.count_badge.setStyleSheet("color: #8b949e; font-size: 11px; padding: 2px 6px; background: #21262d; border-radius: 4px;")
+        top_bar.addWidget(self.count_badge)
+
+        self.copy_btn = QPushButton(_t("copy_all"))
         self.copy_btn.setObjectName("secondaryBtn")
         self.copy_btn.clicked.connect(self.copy_all)
         top_bar.addWidget(self.copy_btn)
@@ -36,7 +47,7 @@ class PropertyTableView(QWidget):
         # Table Widget
         self.table = QTableWidget()
         self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Field", "Value"])
+        self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
@@ -44,6 +55,15 @@ class PropertyTableView(QWidget):
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
         layout.addWidget(self.table)
+
+        I18N.register_listener(self.on_language_changed)
+
+    def on_language_changed(self, lang):
+        self.search_input.setPlaceholderText(_t("filter_placeholder"))
+        self.copy_btn.setText(_t("copy_all"))
+        if self.table.columnCount() == 2:
+            self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
+        self._update_count_badge()
 
     def set_data(self, data_dict_or_list, headers=None):
         self.table.setSortingEnabled(False)
@@ -58,7 +78,7 @@ class PropertyTableView(QWidget):
                 else:
                     self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
-        # If data is a list of dicts (multi-column)
+        # Multi-column list of dicts
         if isinstance(data_dict_or_list, list) and data_dict_or_list and isinstance(data_dict_or_list[0], dict):
             keys = list(data_dict_or_list[0].keys())
             if not headers:
@@ -74,17 +94,16 @@ class PropertyTableView(QWidget):
                     cell = QTableWidgetItem(val)
                     self.table.setItem(row_idx, col_idx, cell)
 
-        # If data is a dictionary (Field -> Value)
+        # Key-Value Dictionary
         elif isinstance(data_dict_or_list, dict):
             self.table.setColumnCount(2)
-            self.table.setHorizontalHeaderLabels(["Field", "Value"])
+            self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
             self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
             self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
 
             rows = []
             for k, v in data_dict_or_list.items():
                 if isinstance(v, dict):
-                    # Category group header
                     rows.append((f"[{k.upper()}]", "", True))
                     for sub_k, sub_v in v.items():
                         rows.append((f"    {sub_k}", str(sub_v), False))
@@ -112,9 +131,11 @@ class PropertyTableView(QWidget):
                 self.table.setItem(row_idx, 1, v_item)
 
         self.table.setSortingEnabled(True)
+        self._update_count_badge()
 
     def _filter_rows(self, text):
         query = text.lower().strip()
+        visible_count = 0
         for row in range(self.table.rowCount()):
             match = False
             for col in range(self.table.columnCount()):
@@ -123,15 +144,23 @@ class PropertyTableView(QWidget):
                     match = True
                     break
             self.table.setRowHidden(row, not match)
+            if match:
+                visible_count += 1
+        self._update_count_badge(visible_count if query else self.table.rowCount())
+
+    def _update_count_badge(self, count=None):
+        if count is None:
+            count = self.table.rowCount()
+        self.count_badge.setText(_t("items_count", count=count))
 
     def _show_context_menu(self, pos):
         item = self.table.itemAt(pos)
         if not item:
             return
         menu = QMenu(self)
-        copy_val_action = menu.addAction("Copy Value")
-        copy_row_action = menu.addAction("Copy Row")
-        copy_all_action = menu.addAction("Copy Entire Table")
+        copy_val_action = menu.addAction(_t("copy_value"))
+        copy_row_action = menu.addAction(_t("copy_row"))
+        copy_all_action = menu.addAction(_t("copy_table"))
 
         action = menu.exec_(self.table.viewport().mapToGlobal(pos))
         if action == copy_val_action:

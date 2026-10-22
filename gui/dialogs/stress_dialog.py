@@ -1,6 +1,6 @@
 """
 XUiDa64 - System Stability Test & Stress Testing Dialog
-Features real-time pyqtgraph telemetry charts, multi-threaded stress engine and thermal throttling monitoring.
+Features real-time pyqtgraph telemetry charts, multi-threaded stress engine, thermal throttling alerts, and multi-language support.
 """
 
 from PyQt5.QtWidgets import (
@@ -11,13 +11,14 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QColor, QFont
 import pyqtgraph as pg
 
+from core.i18n import I18N, _t
 from benchmarks.stress_test import StressTestEngine
 
 class StressTestDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("XUiDa64 - System Stability Test")
-        self.resize(850, 680)
+        self.setWindowTitle(_t("stress_title"))
+        self.resize(880, 700)
         self.setStyleSheet("""
             QDialog {
                 background-color: #0d1117;
@@ -49,15 +50,15 @@ class StressTestDialog(QDialog):
         self.banner.setObjectName("statusBanner")
         self.banner.setStyleSheet("background-color: #1f6feb; border: 1px solid #388bfd; border-radius: 6px; padding: 6px;")
         b_layout = QHBoxLayout(self.banner)
-        b_layout.setContentsMargins(10, 6, 10, 6)
+        b_layout.setContentsMargins(12, 6, 12, 6)
 
-        self.status_lbl = QLabel("Status: System Ready (Idle)")
+        self.status_lbl = QLabel(_t("stress_status_ready"))
         self.status_lbl.setStyleSheet("color: #ffffff; font-size: 14px; font-weight: bold;")
         b_layout.addWidget(self.status_lbl)
 
         b_layout.addStretch()
 
-        self.elapsed_lbl = QLabel("Time Elapsed: 00:00:00")
+        self.elapsed_lbl = QLabel(_t("stress_time_elapsed", time="00:00:00"))
         self.elapsed_lbl.setStyleSheet("color: #ffffff; font-size: 14px; font-weight: bold;")
         b_layout.addWidget(self.elapsed_lbl)
 
@@ -65,15 +66,16 @@ class StressTestDialog(QDialog):
 
         # 2. Stress Option Checkboxes
         opts_box = QHBoxLayout()
-        self.chk_cpu = QCheckBox("Stress CPU")
+        opts_box.setSpacing(14)
+        self.chk_cpu = QCheckBox(_t("stress_chk_cpu"))
         self.chk_cpu.setChecked(True)
-        self.chk_fpu = QCheckBox("Stress FPU")
+        self.chk_fpu = QCheckBox(_t("stress_chk_fpu"))
         self.chk_fpu.setChecked(True)
-        self.chk_cache = QCheckBox("Stress Cache")
+        self.chk_cache = QCheckBox(_t("stress_chk_cache"))
         self.chk_cache.setChecked(True)
-        self.chk_memory = QCheckBox("Stress System Memory")
+        self.chk_memory = QCheckBox(_t("stress_chk_mem"))
         self.chk_memory.setChecked(True)
-        self.chk_gpu = QCheckBox("Stress GPU")
+        self.chk_gpu = QCheckBox(_t("stress_chk_gpu"))
         self.chk_gpu.setChecked(False)
 
         opts_box.addWidget(self.chk_cpu)
@@ -112,17 +114,17 @@ class StressTestDialog(QDialog):
         # 4. Bottom Controls Bar
         bottom_bar = QHBoxLayout()
 
-        self.start_btn = QPushButton("▶ Start Test")
+        self.start_btn = QPushButton(_t("stress_start"))
         self.start_btn.clicked.connect(self.start_test)
         bottom_bar.addWidget(self.start_btn)
 
-        self.stop_btn = QPushButton("⏹ Stop Test")
+        self.stop_btn = QPushButton(_t("stress_stop"))
         self.stop_btn.setObjectName("dangerBtn")
         self.stop_btn.setEnabled(False)
         self.stop_btn.clicked.connect(self.stop_test)
         bottom_bar.addWidget(self.stop_btn)
 
-        self.clear_btn = QPushButton("🗑 Clear")
+        self.clear_btn = QPushButton(_t("stress_clear"))
         self.clear_btn.setObjectName("secondaryBtn")
         self.clear_btn.clicked.connect(self.clear_data)
         bottom_bar.addWidget(self.clear_btn)
@@ -133,7 +135,7 @@ class StressTestDialog(QDialog):
         self.cur_stats_lbl.setStyleSheet("font-weight: bold; color: #58a6ff;")
         bottom_bar.addWidget(self.cur_stats_lbl)
 
-        close_btn = QPushButton("Close")
+        close_btn = QPushButton(_t("stress_close"))
         close_btn.setObjectName("secondaryBtn")
         close_btn.clicked.connect(self.close)
         bottom_bar.addWidget(close_btn)
@@ -160,7 +162,7 @@ class StressTestDialog(QDialog):
         self.chk_memory.setEnabled(False)
         self.chk_gpu.setEnabled(False)
 
-        self.status_lbl.setText("Status: Stressing System... (Monitoring)")
+        self.status_lbl.setText(_t("stress_status_running"))
         self.banner.setStyleSheet("background-color: #238636; border: 1px solid #3fb950; border-radius: 6px; padding: 6px;")
         self.timer.start(1000)
 
@@ -175,7 +177,7 @@ class StressTestDialog(QDialog):
         self.chk_memory.setEnabled(True)
         self.chk_gpu.setEnabled(True)
 
-        self.status_lbl.setText("Status: Test Stopped")
+        self.status_lbl.setText(_t("stress_status_stopped"))
         self.banner.setStyleSheet("background-color: #30363d; border: 1px solid #8b949e; border-radius: 6px; padding: 6px;")
 
     def clear_data(self):
@@ -184,11 +186,11 @@ class StressTestDialog(QDialog):
         self.curve_cpu_temp.setData([], [])
         self.curve_gpu_temp.setData([], [])
         self.curve_usage.setData([], [])
-        self.elapsed_lbl.setText("Time Elapsed: 00:00:00")
+        self.elapsed_lbl.setText(_t("stress_time_elapsed", time="00:00:00"))
 
     def update_telemetry(self):
         telem = self.engine.update_telemetry()
-        self.elapsed_lbl.setText(f"Time Elapsed: {telem['elapsed']}")
+        self.elapsed_lbl.setText(_t("stress_time_elapsed", time=telem['elapsed']))
         self.cur_stats_lbl.setText(
             f"CPU: {telem['cpu_temp']:.1f} °C | GPU: {telem['gpu_temp']:.1f} °C | Load: {telem['cpu_usage']:.1f} %"
         )
@@ -200,7 +202,7 @@ class StressTestDialog(QDialog):
             self.curve_usage.setData(hist["timestamps"], hist["cpu_usage"])
 
         if telem["throttling"]:
-            self.status_lbl.setText("⚠️ WARNING: CPU THERMAL THROTTLING DETECTED!")
+            self.status_lbl.setText(_t("stress_throttling"))
             self.banner.setStyleSheet("background-color: #da3633; border: 1px solid #f85149; border-radius: 6px; padding: 6px;")
 
     def closeEvent(self, event):

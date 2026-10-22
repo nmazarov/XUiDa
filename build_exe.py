@@ -22,6 +22,7 @@ def build():
         "--noconsole",
         "--name=XUiDa64",
         "--clean",
+        "--noconfirm",
         "--onedir",
         "--hidden-import=PyQt5",
         "--hidden-import=pyqtgraph",

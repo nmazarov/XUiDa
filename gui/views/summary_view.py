@@ -1,11 +1,12 @@
 """
 XUiDa64 - Computer Summary View Widget
-Recreates classic AIDA64 Computer -> Summary layout with clean categorizations.
+Recreates classic AIDA64 Computer -> Summary layout with clean categorizations and multi-language support.
 """
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QMenu, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
+from core.i18n import I18N, _t
 from core.system_info import SystemInfo
 from core.cpu_info import CPUInfo
 from core.memory_info import MemoryInfo
@@ -17,11 +18,11 @@ class SummaryView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(8, 8, 8, 8)
 
         self.table = QTableWidget()
         self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["Field", "Value"])
+        self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
@@ -30,6 +31,11 @@ class SummaryView(QWidget):
         self.table.customContextMenuRequested.connect(self._show_context_menu)
         layout.addWidget(self.table)
 
+        I18N.register_listener(self.on_language_changed)
+        self.refresh_data()
+
+    def on_language_changed(self, lang):
+        self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
         self.refresh_data()
 
     def refresh_data(self):
@@ -46,7 +52,7 @@ class SummaryView(QWidget):
         adapters = NetworkInfo.get_adapters()
 
         sections = [
-            ("Computer", [
+            (_t("sec_computer"), [
                 ("Computer Type", f"ACPI x64-based PC ({sys_info.get('Architecture')})"),
                 ("Operating System", f"{sys_info.get('OSName')} (Build {sys_info.get('Build')})"),
                 ("OS Architecture", sys_info.get("Architecture")),
@@ -55,9 +61,9 @@ class SummaryView(QWidget):
                 ("System Uptime", sys_info.get("Uptime")),
                 ("Install Date", sys_info.get("InstallDate"))
             ]),
-            ("Motherboard", [
+            (_t("sec_motherboard"), [
                 ("CPU Type", f"{cpu.get('Brand')} ({cpu.get('PhysicalCores')} Cores, {cpu.get('LogicalCores')} Threads)"),
-                ("CPU Clock / Multiplier", f"{cpu.get('CurrentClock')} / Base: {cpu.get('BaseClock')}"),
+                ("CPU Clock", f"{cpu.get('CurrentClock')} (Base: {cpu.get('BaseClock')})"),
                 ("Motherboard Name", f"{mb_info.get('Manufacturer')} {mb_info.get('Product')}"),
                 ("Motherboard Chipset", mb_info.get("Chipset")),
                 ("System Memory", f"{mem.get('TotalGB')} GB (Used: {mem.get('UsedGB')} GB, Free: {mem.get('FreeGB')} GB)"),
@@ -66,19 +72,19 @@ class SummaryView(QWidget):
                 ("BIOS Release Date", bios_info.get("ReleaseDate")),
                 ("Boot Mode", f"{bios_info.get('BootMode')} (SecureBoot: {bios_info.get('SecureBoot')})")
             ]),
-            ("Display", [
+            (_t("sec_display"), [
                 ("Video Adapter", gpus[0].get("Name") if gpus else "Generic Display Adapter"),
                 ("Video Driver", gpus[0].get("DriverVersion") if gpus else "N/A"),
                 ("Installed VRAM", f"{gpus[0].get('VRAM_MB', 0)} MB" if gpus else "N/A"),
                 ("Current Resolution", gpus[0].get("Resolution") if gpus else "N/A"),
                 ("Connected Monitor", ", ".join([m.get("Name") for m in monitors]) if monitors else "Generic Monitor")
             ]),
-            ("Storage", [
+            (_t("sec_storage"), [
                 ("Storage Drives", ", ".join([f"{d.get('Model')} ({d.get('SizeGB')}GB {d.get('MediaType')})" for d in phys_drives])),
                 ("Partitions", " | ".join([f"{ld.get('Device')} {ld.get('TotalGB')}GB ({ld.get('FreeGB')}GB free)" for ld in log_drives])),
-                ("SMART Status", "All Physical Disks OK / Healthy" if phys_drives else "OK")
+                ("SMART Status", "Healthy / OK" if phys_drives else "OK")
             ]),
-            ("Network", [
+            (_t("sec_network"), [
                 ("Primary Network Adapter", adapters[0].get("Name") if adapters else "None"),
                 ("IP Address", adapters[0].get("IPv4") if adapters else "N/A"),
                 ("MAC Address", adapters[0].get("MAC") if adapters else "N/A"),
@@ -115,8 +121,8 @@ class SummaryView(QWidget):
         if not item:
             return
         menu = QMenu(self)
-        copy_val_action = menu.addAction("Copy Value")
-        copy_all_action = menu.addAction("Copy All Summary")
+        copy_val_action = menu.addAction(_t("copy_value"))
+        copy_all_action = menu.addAction(_t("copy_table"))
         action = menu.exec_(self.table.viewport().mapToGlobal(pos))
         if action == copy_val_action:
             QApplication.clipboard().setText(item.text())

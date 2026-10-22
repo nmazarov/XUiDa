@@ -1,14 +1,15 @@
 """
 XUiDa64 - Real-Time Sensor Dashboard View
-Displays live telemetry with gauges, sensor cards and real-time updates.
+Displays live telemetry with gauges, sensor cards, category filters and multi-language support.
 """
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QFrame,
-    QTableWidget, QTableWidgetItem, QHeaderView, QPushButton
+    QTableWidget, QTableWidgetItem, QHeaderView, QPushButton, QButtonGroup
 )
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QColor, QFont
+from core.i18n import I18N, _t
 from core.sensors import Sensors
 
 class MetricCard(QFrame):
@@ -23,7 +24,7 @@ class MetricCard(QFrame):
             }
         """)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(4)
 
         self.title_lbl = QLabel(title)
@@ -35,6 +36,9 @@ class MetricCard(QFrame):
         layout.addWidget(self.value_lbl)
 
         self.unit = unit
+
+    def set_title(self, title):
+        self.title_lbl.setText(title)
 
     def set_value(self, val, color=None):
         unit_str = f" {self.unit}" if self.unit else ""
@@ -49,18 +53,20 @@ class MetricCard(QFrame):
 class SensorView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.current_filter = "All"
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
 
         # Top Control Row
         top_bar = QHBoxLayout()
-        header_lbl = QLabel("Hardware Monitor & Sensor Status")
-        header_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #58a6ff;")
-        top_bar.addWidget(header_lbl)
+        self.header_lbl = QLabel(_t("sensor_header"))
+        self.header_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #58a6ff;")
+        top_bar.addWidget(self.header_lbl)
         top_bar.addStretch()
 
-        self.pause_btn = QPushButton("⏸ Pause Updates")
+        self.pause_btn = QPushButton(_t("sensor_pause"))
         self.pause_btn.setObjectName("secondaryBtn")
         self.pause_btn.clicked.connect(self.toggle_updates)
         top_bar.addWidget(self.pause_btn)
@@ -87,10 +93,40 @@ class SensorView(QWidget):
 
         layout.addLayout(cards_layout)
 
+        # Category Filter Bar
+        filter_bar = QHBoxLayout()
+        filter_bar.setSpacing(6)
+
+        self.btn_all = QPushButton(_t("sensor_all"))
+        self.btn_temp = QPushButton(_t("sensor_temp"))
+        self.btn_fan = QPushButton(_t("sensor_fan"))
+        self.btn_pwr = QPushButton(_t("sensor_power"))
+        self.btn_clk = QPushButton(_t("sensor_clock"))
+        self.btn_usg = QPushButton(_t("sensor_usage"))
+
+        self.filter_buttons = [
+            (self.btn_all, "All"),
+            (self.btn_temp, "Temperatures"),
+            (self.btn_fan, "Fans"),
+            (self.btn_pwr, "Powers"),
+            (self.btn_clk, "Clocks"),
+            (self.btn_usg, "Usage")
+        ]
+
+        for btn, cat in self.filter_buttons:
+            btn.setCheckable(True)
+            btn.setObjectName("secondaryBtn")
+            btn.clicked.connect(lambda checked, c=cat: self.set_filter(c))
+            filter_bar.addWidget(btn)
+
+        self.btn_all.setChecked(True)
+        filter_bar.addStretch()
+        layout.addLayout(filter_bar)
+
         # Detailed Sensor Table
         self.table = QTableWidget()
         self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Sensor", "Value", "Unit", "Category"])
+        self.table.setHorizontalHeaderLabels([_t("col_sensor"), _t("col_value"), _t("col_unit"), _t("col_category")])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -104,15 +140,33 @@ class SensorView(QWidget):
         self.timer.timeout.connect(self.update_sensors)
         self.timer.start(1200)
 
+        I18N.register_listener(self.on_language_changed)
+        self.update_sensors()
+
+    def on_language_changed(self, lang):
+        self.header_lbl.setText(_t("sensor_header"))
+        self.pause_btn.setText(_t("sensor_pause") if self.timer.isActive() else _t("sensor_resume"))
+        self.btn_all.setText(_t("sensor_all"))
+        self.btn_temp.setText(_t("sensor_temp"))
+        self.btn_fan.setText(_t("sensor_fan"))
+        self.btn_pwr.setText(_t("sensor_power"))
+        self.btn_clk.setText(_t("sensor_clock"))
+        self.btn_usg.setText(_t("sensor_usage"))
+        self.table.setHorizontalHeaderLabels([_t("col_sensor"), _t("col_value"), _t("col_unit"), _t("col_category")])
+
+    def set_filter(self, category):
+        self.current_filter = category
+        for btn, cat in self.filter_buttons:
+            btn.setChecked(cat == category)
         self.update_sensors()
 
     def toggle_updates(self):
         if self.timer.isActive():
             self.timer.stop()
-            self.pause_btn.setText("▶ Resume Updates")
+            self.pause_btn.setText(_t("sensor_resume"))
         else:
             self.timer.start(1200)
-            self.pause_btn.setText("⏸ Pause Updates")
+            self.pause_btn.setText(_t("sensor_pause"))
 
     def update_sensors(self):
         sensors = Sensors.get_all_sensors()
@@ -146,17 +200,20 @@ class SensorView(QWidget):
         for item in sensors.get("Fans", []):
             self.card_gpu_fan.set_value(item.get("Value", 0))
 
-        # Update Table
-        all_items = (
-            sensors.get("Temperatures", []) +
-            sensors.get("Fans", []) +
-            sensors.get("Powers", []) +
-            sensors.get("Clocks", []) +
-            sensors.get("Usage", [])
-        )
+        # Filter items for table
+        if self.current_filter == "All":
+            items = (
+                sensors.get("Temperatures", []) +
+                sensors.get("Fans", []) +
+                sensors.get("Powers", []) +
+                sensors.get("Clocks", []) +
+                sensors.get("Usage", [])
+            )
+        else:
+            items = sensors.get(self.current_filter, [])
 
-        self.table.setRowCount(len(all_items))
-        for row, item in enumerate(all_items):
+        self.table.setRowCount(len(items))
+        for row, item in enumerate(items):
             self.table.setItem(row, 0, QTableWidgetItem(item.get("Sensor", "")))
             self.table.setItem(row, 1, QTableWidgetItem(str(item.get("Value", ""))))
             self.table.setItem(row, 2, QTableWidgetItem(item.get("Unit", "")))

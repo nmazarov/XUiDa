@@ -1,6 +1,6 @@
 """
 XUiDa64 - AIDA64-Style CPUID Utility Window
-Recreates iconic AIDA64 CPUID dialog with processor logos, clocks, and instruction flags.
+Recreates iconic AIDA64 CPUID dialog with processor logos, clocks, instruction flags, and multi-language support.
 """
 
 from PyQt5.QtWidgets import (
@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor
+from core.i18n import I18N, _t
 from core.cpuid import CPUID
 from core.cpu_info import CPUInfo
 from core.system_info import SystemInfo
@@ -17,7 +18,7 @@ from core.memory_info import MemoryInfo
 class CPUIDDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("XUiDa64 CPUID")
+        self.setWindowTitle(_t("cpuid_title"))
         self.setFixedSize(540, 620)
         self.setStyleSheet("""
             QDialog {
@@ -63,46 +64,46 @@ class CPUIDDialog(QDialog):
         layout.addWidget(header_frame)
 
         # 2. Clocks & Multipliers Group
-        clocks_group = QGroupBox("Clocks & Multipliers")
-        c_layout = QGridLayout(clocks_group)
+        self.clocks_group = QGroupBox(_t("cpuid_clocks"))
+        c_layout = QGridLayout(self.clocks_group)
         c_layout.setSpacing(6)
 
-        self.lbl_cpu_clock = QLabel("Core Speed: --")
-        self.lbl_multiplier = QLabel("Multiplier: x34.0")
-        self.lbl_bus_speed = QLabel("Bus Speed: 100.0 MHz")
-        self.lbl_voltage = QLabel("Core Voltage: --")
+        self.lbl_cpu_clock = QLabel(f"{_t('cpuid_core_speed')}: --")
+        self.lbl_multiplier = QLabel(f"{_t('cpuid_multiplier')}: x34.0")
+        self.lbl_bus_speed = QLabel(f"{_t('cpuid_bus_speed')}: 100.0 MHz")
+        self.lbl_voltage = QLabel(f"{_t('cpuid_voltage')}: --")
 
         c_layout.addWidget(self.lbl_cpu_clock, 0, 0)
         c_layout.addWidget(self.lbl_multiplier, 0, 1)
         c_layout.addWidget(self.lbl_bus_speed, 1, 0)
         c_layout.addWidget(self.lbl_voltage, 1, 1)
-        layout.addWidget(clocks_group)
+        layout.addWidget(self.clocks_group)
 
         # 3. CPUID Stepping & Family Group
-        stepping_group = QGroupBox("Processor Signature")
-        s_layout = QGridLayout(stepping_group)
+        self.stepping_group = QGroupBox(_t("cpuid_signature"))
+        s_layout = QGridLayout(self.stepping_group)
         s_layout.setSpacing(6)
 
-        self.lbl_family = QLabel("Family: --")
-        self.lbl_model = QLabel("Model: --")
-        self.lbl_stepping = QLabel("Stepping: --")
+        self.lbl_family = QLabel(f"{_t('cpuid_family')}: --")
+        self.lbl_model = QLabel(f"{_t('cpuid_model')}: --")
+        self.lbl_stepping = QLabel(f"{_t('cpuid_stepping')}: --")
         self.lbl_signature = QLabel("Signature: --")
 
         s_layout.addWidget(self.lbl_family, 0, 0)
         s_layout.addWidget(self.lbl_model, 0, 1)
         s_layout.addWidget(self.lbl_stepping, 1, 0)
         s_layout.addWidget(self.lbl_signature, 1, 1)
-        layout.addWidget(stepping_group)
+        layout.addWidget(self.stepping_group)
 
         # 4. Instruction Sets Grid Group
-        inst_group = QGroupBox("Supported Instruction Sets")
-        self.inst_layout = QGridLayout(inst_group)
+        self.inst_group = QGroupBox(_t("cpuid_instructions"))
+        self.inst_layout = QGridLayout(self.inst_group)
         self.inst_layout.setSpacing(6)
-        layout.addWidget(inst_group)
+        layout.addWidget(self.inst_group)
 
         # 5. Cache Hierarchy Group
-        cache_group = QGroupBox("Caches")
-        ca_layout = QGridLayout(cache_group)
+        self.cache_group = QGroupBox(_t("cpuid_caches"))
+        ca_layout = QGridLayout(self.cache_group)
         ca_layout.setSpacing(6)
 
         self.lbl_l1d = QLabel("L1 Data: --")
@@ -114,18 +115,18 @@ class CPUIDDialog(QDialog):
         ca_layout.addWidget(self.lbl_l1i, 0, 1)
         ca_layout.addWidget(self.lbl_l2, 1, 0)
         ca_layout.addWidget(self.lbl_l3, 1, 1)
-        layout.addWidget(cache_group)
+        layout.addWidget(self.cache_group)
 
         # 6. Bottom Buttons
         btn_box = QHBoxLayout()
         btn_box.addStretch()
 
-        self.refresh_btn = QPushButton("🔄 Refresh")
+        self.refresh_btn = QPushButton(_t("cpuid_refresh"))
         self.refresh_btn.setObjectName("secondaryBtn")
         self.refresh_btn.clicked.connect(self.load_data)
         btn_box.addWidget(self.refresh_btn)
 
-        close_btn = QPushButton("Close")
+        close_btn = QPushButton(_t("cpuid_close"))
         close_btn.clicked.connect(self.accept)
         btn_box.addWidget(close_btn)
 
@@ -140,12 +141,12 @@ class CPUIDDialog(QDialog):
         self.proc_name_lbl.setText(cpuid_info.get("brand", "Unknown Processor"))
         self.socket_lbl.setText(f"{cpu_details.get('Socket', 'LGA1700')} | {cpu_details.get('PhysicalCores')} Cores, {cpu_details.get('LogicalCores')} Threads")
 
-        self.lbl_cpu_clock.setText(f"Core Speed: {cpu_details.get('CurrentClock')}")
-        self.lbl_voltage.setText(f"Core Voltage: {cpu_details.get('Voltage')}")
+        self.lbl_cpu_clock.setText(f"{_t('cpuid_core_speed')}: {cpu_details.get('CurrentClock')}")
+        self.lbl_voltage.setText(f"{_t('cpuid_voltage')}: {cpu_details.get('Voltage')}")
 
-        self.lbl_family.setText(f"Family: {cpuid_info.get('family', '0')}")
-        self.lbl_model.setText(f"Model: {cpuid_info.get('model', '0')}")
-        self.lbl_stepping.setText(f"Stepping: {cpuid_info.get('stepping', '0')}")
+        self.lbl_family.setText(f"{_t('cpuid_family')}: {cpuid_info.get('family', '0')}")
+        self.lbl_model.setText(f"{_t('cpuid_model')}: {cpuid_info.get('model', '0')}")
+        self.lbl_stepping.setText(f"{_t('cpuid_stepping')}: {cpuid_info.get('stepping', '0')}")
         self.lbl_signature.setText(f"Signature: {cpuid_info.get('signature', '0')}")
 
         # Instruction sets

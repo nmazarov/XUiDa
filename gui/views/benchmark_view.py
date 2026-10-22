@@ -1,6 +1,6 @@
 """
 XUiDa64 - Benchmark Suite & Comparison Bar Chart View
-Recreates AIDA64's comparative ranking charts with reference CPU database.
+Recreates AIDA64's comparative ranking charts with reference CPU database and multi-language support.
 """
 
 from PyQt5.QtWidgets import (
@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QBrush
 
+from core.i18n import I18N, _t
 from benchmarks.reference_data import REFERENCE_SCORES
 from benchmarks.memory_bench import MemoryBenchmark
 from benchmarks.cpu_bench import CPUBenchmarks
@@ -85,7 +86,7 @@ class BarChartWidget(QWidget):
 
         max_score = max(score for _, score, _ in self.items) or 1.0
         bar_x_start = 280
-        bar_max_w = max(w - bar_x_start - 120, 100)
+        bar_max_w = max(w - bar_x_start - 130, 100)
         row_height = 30
         y = 20
 
@@ -93,7 +94,6 @@ class BarChartWidget(QWidget):
         bold_font = QFont("Segoe UI", 9, QFont.Bold)
 
         for name, score, is_user in self.items:
-            # Bar width ratio
             ratio = score / max_score
             bar_w = int(bar_max_w * ratio)
 
@@ -107,12 +107,10 @@ class BarChartWidget(QWidget):
             bar_rect_y = y + 3
             bar_rect_h = 18
             if is_user:
-                # Radiant green / cyan for user PC
                 painter.fillRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h, QBrush(QColor("#238636")))
                 painter.setPen(QPen(QColor("#3fb950"), 1))
                 painter.drawRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h)
             else:
-                # Elegant dark slate blue for reference PCs
                 painter.fillRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h, QBrush(QColor("#21262d")))
                 painter.setPen(QPen(QColor("#30363d"), 1))
                 painter.drawRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h)
@@ -120,7 +118,7 @@ class BarChartWidget(QWidget):
             # Draw Score Text
             score_str = f"{score:,.1f} {self.unit}" if isinstance(score, float) else f"{score:,} {self.unit}"
             painter.setPen(QColor("#58a6ff" if is_user else "#8b949e"))
-            painter.drawText(bar_x_start + bar_w + 10, y + 16, 110, 20, Qt.AlignLeft | Qt.AlignVCenter, score_str)
+            painter.drawText(bar_x_start + bar_w + 10, y + 16, 120, 20, Qt.AlignLeft | Qt.AlignVCenter, score_str)
 
             y += row_height
 
@@ -128,29 +126,29 @@ class BenchmarkView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
         # Top Control Bar
         control_bar = QHBoxLayout()
         control_bar.setSpacing(12)
 
-        lbl = QLabel("Benchmark:")
-        lbl.setStyleSheet("font-weight: bold; color: #58a6ff;")
-        control_bar.addWidget(lbl)
+        self.lbl_select = QLabel(_t("bench_select"))
+        self.lbl_select.setStyleSheet("font-weight: bold; color: #58a6ff;")
+        control_bar.addWidget(self.lbl_select)
 
         self.combo = QComboBox()
         self.combo.addItems(list(REFERENCE_SCORES.keys()))
         self.combo.currentIndexChanged.connect(self.on_benchmark_changed)
         control_bar.addWidget(self.combo)
 
-        self.start_btn = QPushButton("▶ Run Benchmark")
+        self.start_btn = QPushButton(_t("bench_run"))
         self.start_btn.clicked.connect(self.start_benchmark)
         control_bar.addWidget(self.start_btn)
 
         control_bar.addStretch()
 
-        self.user_score_lbl = QLabel("Result: Ready to test")
+        self.user_score_lbl = QLabel(_t("bench_not_run"))
         self.user_score_lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #3fb950;")
         control_bar.addWidget(self.user_score_lbl)
 
@@ -176,6 +174,12 @@ class BenchmarkView(QWidget):
         self.cached_scores = {}
         self.worker = None
 
+        I18N.register_listener(self.on_language_changed)
+        self.on_benchmark_changed()
+
+    def on_language_changed(self, lang):
+        self.lbl_select.setText(_t("bench_select"))
+        self.start_btn.setText(_t("bench_run"))
         self.on_benchmark_changed()
 
     def on_benchmark_changed(self):
@@ -189,10 +193,11 @@ class BenchmarkView(QWidget):
 
         if bench_name in self.cached_scores:
             user_val = self.cached_scores[bench_name]
-            items.append((f"{self.user_cpu_name} (This Computer)", user_val, True))
-            self.user_score_lbl.setText(f"Result: {user_val:,.1f} {unit}")
+            label = f"{self.user_cpu_name} {_t('bench_this_pc')}"
+            items.append((label, user_val, True))
+            self.user_score_lbl.setText(_t("bench_result", val=f"{user_val:,.1f} {unit}"))
         else:
-            self.user_score_lbl.setText("Result: Not benchmarked yet")
+            self.user_score_lbl.setText(_t("bench_not_run"))
 
         # Sort items
         items.sort(key=lambda x: x[1], reverse=higher_better)
@@ -204,7 +209,7 @@ class BenchmarkView(QWidget):
         bench_name = self.combo.currentText()
         self.start_btn.setEnabled(False)
         self.progress.setValue(10)
-        self.user_score_lbl.setText("Running test...")
+        self.user_score_lbl.setText(_t("bench_running"))
 
         self.worker = BenchmarkWorker(bench_name)
         self.worker.progress.connect(self.progress.setValue)
