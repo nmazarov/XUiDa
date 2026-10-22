@@ -79,6 +79,9 @@ class NavigationTree(QTreeWidget):
                 ("nav_programs", "Installed Programs"),
                 ("nav_startup", "Startup Programs")
             ]),
+            ("cat_cleaner", "cat_software.png", [
+                ("nav_cleaner", "System Cleaner")
+            ]),
             ("cat_benchmarks", "cat_benchmarks.png", [
                 ("Memory Read", "Memory Read"),
                 ("Memory Write", "Memory Write"),

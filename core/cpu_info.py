@@ -16,8 +16,10 @@ except ImportError:
     from .cpuid import CPUID
 
 class CPUInfo:
-    @staticmethod
-    def get_details():
+    _cached_wmi_details = None
+
+    @classmethod
+    def get_details(cls):
         cpuid_data = CPUID.get_info()
         brand = cpuid_data.get("brand", "Unknown Processor")
         vendor = cpuid_data.get("vendor", "Unknown")
@@ -26,32 +28,38 @@ class CPUInfo:
         log_cores = psutil.cpu_count(logical=True) or 1
         freq = psutil.cpu_freq()
 
-        wmi_details = {
-            "Socket": "Socket LGA1700 / AM5 / Other",
-            "BaseClock": f"{freq.current:.1f} MHz" if freq else "Unknown",
-            "MaxClock": f"{freq.max:.1f} MHz" if freq and freq.max else "Unknown",
-            "L2Cache": "Unknown",
-            "L3Cache": "Unknown",
-            "Voltage": "Unknown",
-            "CurrentClock": f"{freq.current:.1f} MHz" if freq else "Unknown"
-        }
+        if cls._cached_wmi_details is None:
+            wmi_details = {
+                "Socket": "Socket LGA1700 / AM5 / Other",
+                "BaseClock": f"{freq.current:.1f} MHz" if freq else "Unknown",
+                "MaxClock": f"{freq.max:.1f} MHz" if freq and freq.max else "Unknown",
+                "L2Cache": "Unknown",
+                "L3Cache": "Unknown",
+                "Voltage": "Unknown",
+                "CurrentClock": f"{freq.current:.1f} MHz" if freq else "Unknown"
+            }
 
-        try:
-            wmi = win32com.client.GetObject("winmgmts:")
-            for p in wmi.InstancesOf("Win32_Processor"):
-                wmi_details["Socket"] = getattr(p, "SocketDesignation", "LGA1700 / AM5")
-                wmi_details["Voltage"] = f"{getattr(p, 'CurrentVoltage', 0) / 10.0:.2f} V" if getattr(p, 'CurrentVoltage', 0) else "Auto"
-                if getattr(p, "L2CacheSize", None):
-                    wmi_details["L2Cache"] = f"{p.L2CacheSize} KB"
-                if getattr(p, "L3CacheSize", None):
-                    wmi_details["L3Cache"] = f"{p.L3CacheSize // 1024} MB"
-                if getattr(p, "MaxClockSpeed", None):
-                    wmi_details["MaxClock"] = f"{p.MaxClockSpeed} MHz"
-                if getattr(p, "CurrentClockSpeed", None):
-                    wmi_details["CurrentClock"] = f"{p.CurrentClockSpeed} MHz"
-                break
-        except Exception:
-            pass
+            try:
+                wmi = win32com.client.GetObject("winmgmts:")
+                for p in wmi.InstancesOf("Win32_Processor"):
+                    wmi_details["Socket"] = getattr(p, "SocketDesignation", "LGA1700 / AM5")
+                    wmi_details["Voltage"] = f"{getattr(p, 'CurrentVoltage', 0) / 10.0:.2f} V" if getattr(p, 'CurrentVoltage', 0) else "Auto"
+                    if getattr(p, "L2CacheSize", None):
+                        wmi_details["L2Cache"] = f"{p.L2CacheSize} KB"
+                    if getattr(p, "L3CacheSize", None):
+                        wmi_details["L3Cache"] = f"{p.L3CacheSize // 1024} MB"
+                    if getattr(p, "MaxClockSpeed", None):
+                        wmi_details["MaxClock"] = f"{p.MaxClockSpeed} MHz"
+                    if getattr(p, "CurrentClockSpeed", None):
+                        wmi_details["CurrentClock"] = f"{p.CurrentClockSpeed} MHz"
+                    break
+            except Exception:
+                pass
+            cls._cached_wmi_details = wmi_details
+        else:
+            wmi_details = cls._cached_wmi_details
+            if freq:
+                wmi_details["CurrentClock"] = f"{freq.current:.1f} MHz"
 
         # Formatting caches from CPUID if available
         caches_formatted = []

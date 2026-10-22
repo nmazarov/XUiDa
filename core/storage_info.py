@@ -8,6 +8,8 @@ import subprocess
 import json
 
 class StorageInfo:
+    _cached_physical_drives = None
+
     @staticmethod
     def get_logical_drives():
         drives = []
@@ -33,22 +35,26 @@ class StorageInfo:
                 continue
         return drives
 
-    @staticmethod
-    def get_physical_drives():
+    @classmethod
+    def get_physical_drives(cls, force_refresh=False):
+        if cls._cached_physical_drives is not None and not force_refresh:
+            return cls._cached_physical_drives
+
         drives = []
-        # Query PowerShell Get-PhysicalDisk for reliable modern NVMe / SSD detection
-        ps_data = {}
+        # Direct fast WMI MSFT_PhysicalDisk query without slow powershell process spawning
+        media_types = {3: "HDD", 4: "SSD", 5: "SCM"}
+        bus_types = {3: "ATAPI", 8: "SCSI", 11: "SATA", 17: "NVMe", 7: "USB"}
+        storage_meta = {}
+
         try:
-            cmd = "powershell -NoProfile -Command \"Get-PhysicalDisk | Select-Object DeviceId, FriendlyName, MediaType, BusType, HealthStatus, Size | ConvertTo-Json -Compress\""
-            out = subprocess.check_output(cmd, shell=True, timeout=5).decode("utf-8", errors="ignore").strip()
-            if out:
-                parsed = json.loads(out)
-                if isinstance(parsed, dict):
-                    parsed = [parsed]
-                for item in parsed:
-                    dev_id = str(item.get("DeviceId", ""))
-                    ps_data[dev_id] = item
-                    ps_data[item.get("FriendlyName", "").strip()] = item
+            wmi_storage = win32com.client.GetObject(r"winmgmts:\\.\root\Microsoft\Windows\Storage")
+            for d in wmi_storage.InstancesOf("MSFT_PhysicalDisk"):
+                name = getattr(d, "FriendlyName", "").strip()
+                dev_id = str(getattr(d, "DeviceId", ""))
+                m_type = media_types.get(getattr(d, "MediaType", 0), "SSD" if "SSD" in name.upper() or "NVME" in name.upper() else "HDD")
+                b_type = bus_types.get(getattr(d, "BusType", 0), "NVMe" if "NVME" in name.upper() else "SATA")
+                storage_meta[dev_id] = {"MediaType": m_type, "BusType": b_type}
+                storage_meta[name] = {"MediaType": m_type, "BusType": b_type}
         except Exception:
             pass
 
@@ -63,23 +69,16 @@ class StorageInfo:
                 interface = getattr(d, "InterfaceType", "SATA").strip()
                 serial = getattr(d, "SerialNumber", "Unknown").strip()
 
-                # Merge PowerShell data if present
-                ps_match = ps_data.get(idx) or ps_data.get(model)
-                media_type = "SSD" if "SSD" in model.upper() or "NVME" in model.upper() else "HDD"
-                bus_type = interface
-                health = "OK"
-
-                if ps_match:
-                    media_type = ps_match.get("MediaType", media_type)
-                    bus_type = ps_match.get("BusType", bus_type)
-                    health = ps_match.get("HealthStatus", health)
+                meta = storage_meta.get(idx) or storage_meta.get(model)
+                media_type = meta.get("MediaType") if meta else ("SSD" if "SSD" in model.upper() or "NVME" in model.upper() else "HDD")
+                bus_type = meta.get("BusType") if meta else interface
 
                 drives.append({
                     "Index": idx,
                     "Model": model,
                     "MediaType": media_type,
                     "BusType": bus_type,
-                    "Health": health,
+                    "Health": "OK",
                     "SizeGB": size_gb,
                     "SerialNumber": serial,
                     "Partitions": getattr(d, "Partitions", 1),
@@ -88,6 +87,7 @@ class StorageInfo:
         except Exception as e:
             drives.append({"error": str(e)})
 
+        cls._cached_physical_drives = drives
         return drives
 
     @staticmethod

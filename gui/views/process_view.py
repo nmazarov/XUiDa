@@ -70,8 +70,14 @@ class ProcessView(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         layout.addWidget(self.table)
 
+        self._initial_load_done = False
         I18N.register_listener(self.on_language_changed)
-        self.refresh_processes()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._initial_load_done:
+            self._initial_load_done = True
+            self.refresh_processes()
 
     def on_language_changed(self, lang):
         self.search_input.setPlaceholderText(_t("proc_filter"))

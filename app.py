@@ -15,6 +15,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
+from gui.widgets.splash_screen import CyberSplashScreen
 from gui.main_window import MainWindow
 
 def main():
@@ -39,8 +40,30 @@ def main():
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
 
+    # 1. Immediately show animated Cyber Splash Screen
+    splash = CyberSplashScreen()
+    splash.show()
+    app.processEvents()
+
+    # 2. Sequential progress updates during hardware discovery
+    splash.set_progress(20, "⚡ Инициализация инструкций x86-64 CPUID...")
+    app.processEvents()
+
+    splash.set_progress(45, "🔍 Инициализация WMI и опрос системной шины...")
+    app.processEvents()
+
+    # 3. Instantiate main window
     window = MainWindow()
+
+    splash.set_progress(80, "💾 Подготовка модулей диагностики и очистки...")
+    app.processEvents()
+
+    splash.set_progress(100, "✔ Запуск интерфейса XUiDa64...")
+    app.processEvents()
+
+    # 4. Seamless reveal: show main window and close splash
     window.show()
+    splash.finish(window)
 
     sys.exit(app.exec_())
 

@@ -38,6 +38,7 @@ TRANSLATIONS = {
         "act_gpu_bench": "🎮 GPGPU Compute Benchmark...",
         "act_monitor_diag": "🖥️ Monitor Diagnostics (Dead Pixels)...",
         "act_share": "📸 Share PC Configuration...",
+        "act_cleaner": "🧹 System Cleaner (Disk Junk Cleaner)...",
         "act_github": "🌐 GitHub Project Repository",
         "act_about": "ℹ About XUiDa64",
 
@@ -49,6 +50,7 @@ TRANSLATIONS = {
         "tb_disk_bench": "💾 Disk Bench",
         "tb_gpu_bench": "🎮 GPU Bench",
         "tb_monitor": "🖥️ Monitor",
+        "tb_cleaner": "🧹 Cleaner",
         "tb_share": "📸 Share PC",
         "tb_sensor_osd": "📊 Sensor OSD",
         "tb_refresh": "🔄 Refresh",
@@ -63,10 +65,12 @@ TRANSLATIONS = {
         "cat_network": "🌐 Network",
         "cat_devices": "🔌 Devices",
         "cat_software": "📦 Software",
+        "cat_cleaner": "🧹 Optimization & Cleanup",
         "cat_benchmarks": "🏆 Benchmark",
 
         # Tree Items
         "nav_summary": "Summary",
+        "nav_cleaner": "System Cleaner (CCleaner)",
         "nav_computer_name": "Computer Name",
         "nav_power": "Power Management",
         "nav_battery": "Battery & Mobile Power",
@@ -233,6 +237,7 @@ TRANSLATIONS = {
         "act_gpu_bench": "🎮 Бенчмарк вычислений GPU (GPGPU)...",
         "act_monitor_diag": "🖥️ Диагностика монитора (Битые пиксели)...",
         "act_share": "📸 Поделиться конфигурацией ПК...",
+        "act_cleaner": "🧹 Очистка дисков и мусора (System Cleaner)...",
         "act_github": "🌐 Репозиторий проекта на GitHub",
         "act_about": "ℹ О программе XUiDa64",
 
@@ -244,6 +249,7 @@ TRANSLATIONS = {
         "tb_disk_bench": "💾 Диски",
         "tb_gpu_bench": "🎮 GPU Тест",
         "tb_monitor": "🖥️ Монитор",
+        "tb_cleaner": "🧹 Очистка",
         "tb_share": "📸 Поделиться",
         "tb_sensor_osd": "📊 OSD Панель",
         "tb_refresh": "🔄 Обновить",
@@ -258,10 +264,12 @@ TRANSLATIONS = {
         "cat_network": "🌐 Сеть",
         "cat_devices": "🔌 Устройства",
         "cat_software": "📦 Программы",
+        "cat_cleaner": "🧹 Очистка и оптимизация",
         "cat_benchmarks": "🏆 Бенчмарк",
 
         # Tree Items
         "nav_summary": "Суммарная информация",
+        "nav_cleaner": "Очистка системы (CCleaner)",
         "nav_computer_name": "Имя компьютера",
         "nav_power": "Электропитание",
         "nav_battery": "Батарея и питание",
@@ -890,6 +898,8 @@ PROPERTY_TRANSLATIONS = {
         "Physical Drives": "Физические накопители",
         "SMART": "S.M.A.R.T.",
         "Network Adapters": "Сетевые адаптеры",
+        "System Cleaner": "Очистка системы (CCleaner)",
+        "Optimization & Cleanup": "Очистка и оптимизация",
 
         # Software / Services / Devices columns
         "Publisher": "Издатель / Разработчик",

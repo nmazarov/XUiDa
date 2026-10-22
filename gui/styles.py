@@ -18,27 +18,28 @@ DARK_THEME = f"""
 QMainWindow, QDialog {{
     background-color: {BG_COLOR};
     color: {TEXT_PRIMARY};
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
 }}
 
 QWidget {{
     background-color: {BG_COLOR};
     color: {TEXT_PRIMARY};
-    font-size: 13px;
+    font-family: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    font-size: 12px;
 }}
 
 QMenuBar {{
-    background-color: {BG_COLOR};
+    background-color: #121822;
     color: {TEXT_PRIMARY};
     border-bottom: 1px solid {BORDER_COLOR};
     padding: 3px 6px;
-    font-size: 13px;
+    font-size: 12px;
 }}
 
 QMenuBar::item {{
     background: transparent;
     padding: 5px 12px;
-    border-radius: 6px;
+    border-radius: 5px;
     color: {TEXT_PRIMARY};
 }}
 
@@ -48,15 +49,15 @@ QMenuBar::item:selected {{
 }}
 
 QMenu {{
-    background-color: {CARD_BG};
+    background-color: #17202e;
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 6px;
+    padding: 5px;
 }}
 
 QMenu::item {{
-    padding: 6px 28px 6px 12px;
+    padding: 6px 26px 6px 12px;
     border-radius: 4px;
     color: {TEXT_PRIMARY};
 }}
@@ -73,23 +74,24 @@ QMenu::separator {{
 }}
 
 QToolBar {{
-    background-color: {BG_COLOR};
+    background-color: #121822;
     border-bottom: 1px solid {BORDER_COLOR};
-    spacing: 6px;
-    padding: 5px 10px;
+    spacing: 5px;
+    padding: 4px 8px;
 }}
 
 QToolButton {{
     background-color: {CARD_BG};
-    color: {TEXT_PRIMARY};
+    color: #e2e8f0;
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 6px 14px;
-    font-weight: 500;
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 600;
 }}
 
 QToolButton:hover {{
-    background-color: #212c3e;
+    background-color: #202d42;
     border: 1px solid #00d2ff;
     color: #ffffff;
 }}
@@ -114,36 +116,37 @@ QTreeWidget {{
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 6px;
+    padding: 5px 3px;
     outline: none;
 }}
 
 QTreeWidget::item {{
-    padding: 6px 4px;
+    padding: 5px 6px;
     border-radius: 4px;
-    margin: 1px 0;
-    color: {TEXT_PRIMARY};
+    margin: 1px 2px;
+    color: {TEXT_SECONDARY};
     background-color: {BG_COLOR};
 }}
 
 QTreeWidget::item:hover {{
-    background-color: #1a2536;
+    background-color: #192436;
     color: #00d2ff;
 }}
 
 QTreeWidget::item:selected {{
-    background-color: {SELECTION_COLOR};
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #0099ff);
     color: #ffffff;
+    font-weight: 600;
 }}
 
-/* UNIFIED TABLE STYLES - ZERO WHITE STRIPES */
+/* UNIFIED TABLE STYLES - ZERO WHITE STRIPES & CRISP VERTICAL ALIGNMENT */
 QTableWidget, QTableView {{
     background-color: {BG_COLOR};
     alternate-background-color: {BG_COLOR};
-    color: {TEXT_PRIMARY};
+    color: #f1f5f9;
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    gridline-color: {BORDER_COLOR};
+    gridline-color: #1e2838;
     selection-background-color: {SELECTION_COLOR};
     selection-color: #ffffff;
     outline: none;
@@ -151,19 +154,20 @@ QTableWidget, QTableView {{
 
 QTableWidget::item, QTableView::item {{
     background-color: {BG_COLOR};
-    color: {TEXT_PRIMARY};
+    color: #f1f5f9;
     padding: 6px 10px;
     border: none;
+    font-size: 12px;
 }}
 
 QTableWidget::item:alternate, QTableView::item:alternate {{
     background-color: {BG_COLOR};
-    color: {TEXT_PRIMARY};
+    color: #f1f5f9;
 }}
 
 QTableWidget::item:hover, QTableView::item:hover {{
-    background-color: #1a2332;
-    color: #ffffff;
+    background-color: #1c2738;
+    color: #38bdf8;
 }}
 
 QTableWidget::item:selected, QTableView::item:selected {{
@@ -172,14 +176,15 @@ QTableWidget::item:selected, QTableView::item:selected {{
 }}
 
 QHeaderView::section {{
-    background-color: {CARD_BG};
+    background-color: #17202d;
     color: {ACCENT_BLUE};
-    font-weight: bold;
-    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    padding: 7px 10px;
     border: none;
     border-right: 1px solid {BORDER_COLOR};
     border-bottom: 1px solid {BORDER_COLOR};
-    font-size: 12px;
 }}
 
 QLineEdit {{
@@ -187,26 +192,29 @@ QLineEdit {{
     color: #ffffff;
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 5px 10px;
+    font-size: 12px;
     selection-background-color: {SELECTION_COLOR};
 }}
 
 QLineEdit:focus {{
-    border-color: {ACCENT_BLUE};
-    background-color: {BG_COLOR};
+    border-color: #00d2ff;
+    background-color: #121822;
 }}
 
 QPushButton {{
-    background-color: #238636;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #238636, stop:1 #1e7e34);
     color: #ffffff;
     font-weight: 600;
-    border: 1px solid rgba(240, 246, 252, 0.1);
+    font-size: 12px;
+    border: 1px solid rgba(240, 246, 252, 0.15);
     border-radius: 6px;
-    padding: 6px 14px;
+    padding: 5px 14px;
 }}
 
 QPushButton:hover {{
-    background-color: #2ea043;
+    background: #2ea043;
+    border-color: #3fb950;
 }}
 
 QPushButton:pressed {{
@@ -214,27 +222,28 @@ QPushButton:pressed {{
 }}
 
 QPushButton#secondaryBtn {{
-    background-color: {CARD_BG};
-    color: {TEXT_PRIMARY};
+    background: {CARD_BG};
+    color: #e2e8f0;
     border: 1px solid {BORDER_COLOR};
+    font-weight: 500;
 }}
 
 QPushButton#secondaryBtn:hover {{
-    background-color: #222d3e;
-    border-color: {ACCENT_BLUE};
+    background-color: #202d40;
+    border-color: #00d2ff;
     color: #ffffff;
 }}
 
 QPushButton#secondaryBtn:checked {{
     background-color: {SELECTION_COLOR};
-    border-color: {ACCENT_BLUE};
+    border-color: #00d2ff;
     color: #ffffff;
 }}
 
 QPushButton#dangerBtn {{
     background-color: #da3633;
     color: #ffffff;
-    border: 1px solid rgba(240, 246, 252, 0.1);
+    border: 1px solid rgba(240, 246, 252, 0.15);
 }}
 
 QPushButton#dangerBtn:hover {{
@@ -246,21 +255,22 @@ QComboBox {{
     color: #ffffff;
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 5px 12px;
-    min-width: 160px;
+    padding: 5px 10px;
+    font-size: 12px;
+    min-width: 140px;
 }}
 
 QComboBox:hover {{
-    border-color: {ACCENT_BLUE};
+    border-color: #00d2ff;
 }}
 
 QComboBox::drop-down {{
     border: none;
-    width: 24px;
+    width: 22px;
 }}
 
 QComboBox QAbstractItemView {{
-    background-color: {CARD_BG};
+    background-color: #17202e;
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_COLOR};
     selection-background-color: {SELECTION_COLOR};
@@ -271,36 +281,36 @@ QComboBox QAbstractItemView {{
 QProgressBar {{
     background-color: {CARD_BG};
     border: 1px solid {BORDER_COLOR};
-    border-radius: 6px;
+    border-radius: 5px;
     text-align: center;
     color: #ffffff;
     font-weight: bold;
-    font-size: 11px;
+    font-size: 10px;
 }}
 
 QProgressBar::chunk {{
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #00d2ff);
-    border-radius: 5px;
+    border-radius: 4px;
 }}
 
 QStatusBar {{
-    background-color: {BG_COLOR};
-    color: {TEXT_SECONDARY};
+    background-color: #111620;
+    color: #94a3b8;
     border-top: 1px solid {BORDER_COLOR};
-    padding: 3px 10px;
-    font-size: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
 }}
 
 QScrollBar:vertical {{
     background: {BG_COLOR};
-    width: 8px;
+    width: 7px;
     margin: 0;
 }}
 
 QScrollBar::handle:vertical {{
     background: {BORDER_COLOR};
     min-height: 25px;
-    border-radius: 4px;
+    border-radius: 3px;
 }}
 
 QScrollBar::handle:vertical:hover {{
@@ -309,14 +319,14 @@ QScrollBar::handle:vertical:hover {{
 
 QScrollBar:horizontal {{
     background: {BG_COLOR};
-    height: 8px;
+    height: 7px;
     margin: 0;
 }}
 
 QScrollBar::handle:horizontal {{
     background: {BORDER_COLOR};
     min-width: 25px;
-    border-radius: 4px;
+    border-radius: 3px;
 }}
 
 QScrollBar::handle:horizontal:hover {{

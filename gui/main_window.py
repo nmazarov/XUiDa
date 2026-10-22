@@ -23,6 +23,7 @@ from gui.views.table_view import PropertyTableView
 from gui.views.sensor_view import SensorView
 from gui.views.process_view import ProcessView
 from gui.views.benchmark_view import BenchmarkView
+from gui.views.cleaner_view import CleanerView
 from gui.dialogs.cpuid_dialog import CPUIDDialog
 from gui.dialogs.stress_dialog import StressTestDialog
 from gui.dialogs.sensor_panel import DesktopSensorPanel
@@ -140,6 +141,10 @@ class MainWindow(QMainWindow):
 
         self.tools_menu.addSeparator()
 
+        self.act_cleaner = self.tools_menu.addAction(_t("act_cleaner"))
+        self.act_cleaner.setShortcut("Ctrl+Shift+C")
+        self.act_cleaner.triggered.connect(lambda: self._select_tree_item("System Cleaner"))
+
         self.act_share = self.tools_menu.addAction(_t("act_share"))
         self.act_share.setShortcut("Ctrl+S")
         self.act_share.triggered.connect(self.open_share_dialog)
@@ -198,6 +203,9 @@ class MainWindow(QMainWindow):
 
         self.btn_mon = self.toolbar.addAction(_t("tb_monitor"))
         self.btn_mon.triggered.connect(self.open_monitor_diag)
+
+        self.btn_cleaner = self.toolbar.addAction(_t("tb_cleaner"))
+        self.btn_cleaner.triggered.connect(lambda: self._select_tree_item("System Cleaner"))
 
         self.btn_osd = self.toolbar.addAction(_t("tb_sensor_osd"))
         self.btn_osd.triggered.connect(self.toggle_sensor_panel)
@@ -262,6 +270,7 @@ class MainWindow(QMainWindow):
         self.sensor_view = SensorView()
         self.process_view = ProcessView()
         self.benchmark_view = BenchmarkView()
+        self.cleaner_view = CleanerView()
         self.table_view = PropertyTableView()
 
         self.stack.addWidget(self.summary_view)     # 0
@@ -269,6 +278,7 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.sensor_view)      # 2
         self.stack.addWidget(self.process_view)     # 3
         self.stack.addWidget(self.benchmark_view)   # 4
+        self.stack.addWidget(self.cleaner_view)     # 5
 
         splitter.addWidget(self.stack)
         splitter.setStretchFactor(1, 4)
@@ -421,6 +431,7 @@ class MainWindow(QMainWindow):
         self.act_disk_bench.setText(_t("act_disk_bench"))
         self.act_gpu_bench.setText(_t("act_gpu_bench"))
         self.act_monitor_diag.setText(_t("act_monitor_diag"))
+        self.act_cleaner.setText(_t("act_cleaner"))
         self.act_share.setText(_t("act_share"))
         self.act_git.setText(_t("act_github"))
         self.act_about.setText(_t("act_about"))
@@ -432,6 +443,7 @@ class MainWindow(QMainWindow):
         self.btn_disk.setText(_t("tb_disk_bench"))
         self.btn_gpu.setText(_t("tb_gpu_bench"))
         self.btn_mon.setText(_t("tb_monitor"))
+        self.btn_cleaner.setText(_t("tb_cleaner"))
         self.btn_share.setText(_t("tb_share"))
         self.btn_osd.setText(_t("tb_sensor_osd"))
         self.btn_ref.setText(_t("tb_refresh"))
@@ -489,7 +501,12 @@ class MainWindow(QMainWindow):
                 self.benchmark_view.combo.setCurrentIndex(idx)
             return
 
-        # 5. Table Views for various hardware sections
+        # 5. System Cleaner
+        if internal_id in ("System Cleaner", "nav_cleaner"):
+            self.stack.setCurrentWidget(self.cleaner_view)
+            return
+
+        # 6. Table Views for various hardware sections
         self.stack.setCurrentWidget(self.table_view)
 
         if internal_id == "Computer Name":
