@@ -1,6 +1,6 @@
 """
 XUiDa64 - Dynamic Property & Table View Widget
-Displays hardware properties with multi-language support, search, copy, and export capabilities.
+Displays hardware properties with multi-language support, search, copy, and uniform high-contrast styling.
 """
 
 from PyQt5.QtWidgets import (
@@ -34,7 +34,7 @@ class PropertyTableView(QWidget):
         top_bar.addWidget(self.clear_btn)
 
         self.count_badge = QLabel("")
-        self.count_badge.setStyleSheet("color: #8b949e; font-size: 11px; padding: 2px 6px; background: #21262d; border-radius: 4px;")
+        self.count_badge.setStyleSheet("color: #8b949e; font-size: 11px; padding: 2px 6px; background: #19212e; border-radius: 4px;")
         top_bar.addWidget(self.count_badge)
 
         self.copy_btn = QPushButton(_t("copy_all"))
@@ -44,14 +44,14 @@ class PropertyTableView(QWidget):
 
         layout.addLayout(top_bar)
 
-        # Table Widget
+        # Table Widget - UNIFORM BACKGROUND, NO ALTERNATING WHITE ROWS
         self.table = QTableWidget()
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
+        self.table.setAlternatingRowColors(False)
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
         layout.addWidget(self.table)
@@ -92,6 +92,7 @@ class PropertyTableView(QWidget):
                 for col_idx, k in enumerate(keys):
                     val = str(item.get(k, ""))
                     cell = QTableWidgetItem(val)
+                    cell.setForeground(QColor("#ffffff"))
                     self.table.setItem(row_idx, col_idx, cell)
 
         # Key-Value Dictionary
@@ -125,8 +126,11 @@ class PropertyTableView(QWidget):
                 if is_header:
                     f_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
                     f_item.setForeground(QColor("#58a6ff"))
-                    f_item.setBackground(QColor("#1f2937"))
-                    v_item.setBackground(QColor("#1f2937"))
+                    f_item.setBackground(QColor("#19212e"))
+                    v_item.setBackground(QColor("#19212e"))
+                else:
+                    f_item.setForeground(QColor("#9ca3af"))
+                    v_item.setForeground(QColor("#ffffff"))
                 self.table.setItem(row_idx, 0, f_item)
                 self.table.setItem(row_idx, 1, v_item)
 

@@ -21,16 +21,17 @@ class ReportWizardDialog(QDialog):
         self.setFixedSize(540, 390)
         self.setStyleSheet("""
             QDialog {
-                background-color: #161b22;
-                color: #c9d1d9;
+                background-color: #141a24;
+                color: #ffffff;
             }
             QRadioButton, QCheckBox {
-                color: #c9d1d9;
+                color: #ffffff;
                 font-size: 13px;
                 spacing: 8px;
             }
             QLabel {
                 font-size: 13px;
+                color: #ffffff;
             }
         """)
 

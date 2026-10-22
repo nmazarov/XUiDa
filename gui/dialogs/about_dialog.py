@@ -15,11 +15,12 @@ class AboutDialog(QDialog):
         self.setFixedSize(500, 400)
         self.setStyleSheet("""
             QDialog {
-                background-color: #161b22;
-                color: #c9d1d9;
+                background-color: #141a24;
+                color: #ffffff;
             }
             QLabel {
                 font-family: 'Segoe UI', Arial;
+                color: #ffffff;
             }
         """)
 
@@ -37,13 +38,13 @@ class AboutDialog(QDialog):
         layout.addWidget(ver)
 
         desc = QLabel(_t("about_desc"))
-        desc.setStyleSheet("font-size: 13px; line-height: 1.4; color: #e6edf3;")
+        desc.setStyleSheet("font-size: 13px; line-height: 1.4; color: #ffffff;")
         desc.setWordWrap(True)
         layout.addWidget(desc)
 
         # Specs box
         specs_frame = QFrame()
-        specs_frame.setStyleSheet("background-color: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px;")
+        specs_frame.setStyleSheet("background-color: #19212e; border: 1px solid #2a364a; border-radius: 6px; padding: 10px;")
         sp_layout = QVBoxLayout(specs_frame)
         sp_layout.setSpacing(4)
 

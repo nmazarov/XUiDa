@@ -87,8 +87,8 @@ class StressTestDialog(QDialog):
         layout.addLayout(opts_box)
 
         # 3. Real-Time Graphs (pyqtgraph)
-        pg.setConfigOption('background', '#161b22')
-        pg.setConfigOption('foreground', '#8b949e')
+        pg.setConfigOption('background', '#141a24')
+        pg.setConfigOption('foreground', '#ffffff')
 
         self.plot_temp = pg.PlotWidget(title="Hardware Temperatures (°C)")
         self.plot_temp.showGrid(x=True, y=True, alpha=0.3)

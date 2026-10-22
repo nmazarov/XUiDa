@@ -1,6 +1,6 @@
 """
 XUiDa64 - Real-Time Sensor Dashboard View
-Displays live telemetry with gauges, sensor cards, category filters and multi-language support.
+Displays live telemetry with gauges, sensor cards, category filters and high-contrast readable styling.
 """
 
 from PyQt5.QtWidgets import (
@@ -17,22 +17,22 @@ class MetricCard(QFrame):
         super().__init__(parent)
         self.setStyleSheet("""
             QFrame {
-                background-color: #161b22;
-                border: 1px solid #30363d;
+                background-color: #19212e;
+                border: 1px solid #2a364a;
                 border-radius: 8px;
                 padding: 10px;
             }
         """)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(4)
 
         self.title_lbl = QLabel(title)
-        self.title_lbl.setStyleSheet("color: #8b949e; font-size: 11px; font-weight: bold; text-transform: uppercase;")
+        self.title_lbl.setStyleSheet("color: #9ca3af; font-size: 11px; font-weight: bold; text-transform: uppercase; background: transparent;")
         layout.addWidget(self.title_lbl)
 
         self.value_lbl = QLabel("--")
-        self.value_lbl.setStyleSheet("color: #58a6ff; font-size: 22px; font-weight: bold;")
+        self.value_lbl.setStyleSheet("color: #ffffff; font-size: 24px; font-weight: bold; background: transparent;")
         layout.addWidget(self.value_lbl)
 
         self.unit = unit
@@ -47,8 +47,8 @@ class MetricCard(QFrame):
         else:
             self.value_lbl.setText(f"{val}")
 
-        if color:
-            self.value_lbl.setStyleSheet(f"color: {color}; font-size: 22px; font-weight: bold;")
+        text_color = color if color else "#ffffff"
+        self.value_lbl.setStyleSheet(f"color: {text_color}; font-size: 24px; font-weight: bold; background: transparent;")
 
 class SensorView(QWidget):
     def __init__(self, parent=None):
@@ -123,7 +123,7 @@ class SensorView(QWidget):
         filter_bar.addStretch()
         layout.addLayout(filter_bar)
 
-        # Detailed Sensor Table
+        # Detailed Sensor Table - UNIFORM BACKGROUND, NO ALTERNATING WHITE ROWS
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels([_t("col_sensor"), _t("col_value"), _t("col_unit"), _t("col_category")])
@@ -132,7 +132,7 @@ class SensorView(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
+        self.table.setAlternatingRowColors(False)  # Completely disables alternating white stripes!
         layout.addWidget(self.table)
 
         # Timer
@@ -212,9 +212,28 @@ class SensorView(QWidget):
         else:
             items = sensors.get(self.current_filter, [])
 
+        bold_font = QFont("Segoe UI", 9, QFont.Bold)
+
         self.table.setRowCount(len(items))
         for row, item in enumerate(items):
-            self.table.setItem(row, 0, QTableWidgetItem(item.get("Sensor", "")))
-            self.table.setItem(row, 1, QTableWidgetItem(str(item.get("Value", ""))))
-            self.table.setItem(row, 2, QTableWidgetItem(item.get("Unit", "")))
-            self.table.setItem(row, 3, QTableWidgetItem(item.get("Category", "")))
+            # Sensor name (High contrast white)
+            it0 = QTableWidgetItem(item.get("Sensor", ""))
+            it0.setForeground(QColor("#ffffff"))
+
+            # Value (Electric blue, bold)
+            it1 = QTableWidgetItem(str(item.get("Value", "")))
+            it1.setForeground(QColor("#58a6ff"))
+            it1.setFont(bold_font)
+
+            # Unit (Clean gray)
+            it2 = QTableWidgetItem(item.get("Unit", ""))
+            it2.setForeground(QColor("#9ca3af"))
+
+            # Category (Soft blue)
+            it3 = QTableWidgetItem(item.get("Category", ""))
+            it3.setForeground(QColor("#93c5fd"))
+
+            self.table.setItem(row, 0, it0)
+            self.table.setItem(row, 1, it1)
+            self.table.setItem(row, 2, it2)
+            self.table.setItem(row, 3, it3)

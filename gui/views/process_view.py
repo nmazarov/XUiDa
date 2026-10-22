@@ -1,6 +1,6 @@
 """
 XUiDa64 - Process Explorer & Task Manager View
-Live process monitoring with CPU %, RAM MB, thread counts, multi-language support and management.
+Live process monitoring with CPU %, RAM MB, thread counts, multi-language support and uniform high-contrast styling.
 """
 
 from PyQt5.QtWidgets import (
@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QPushButton, QHeaderView, QLabel, QMessageBox, QApplication
 )
 from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QColor, QFont
 import psutil
 from core.i18n import I18N, _t
 from core.software_info import SoftwareInfo
@@ -35,7 +36,7 @@ class ProcessView(QWidget):
         top_bar.addWidget(self.clear_btn)
 
         self.proc_count_lbl = QLabel("")
-        self.proc_count_lbl.setStyleSheet("color: #8b949e; font-size: 11px; padding: 2px 6px; background: #21262d; border-radius: 4px;")
+        self.proc_count_lbl.setStyleSheet("color: #8b949e; font-size: 11px; padding: 2px 6px; background: #19212e; border-radius: 4px;")
         top_bar.addWidget(self.proc_count_lbl)
 
         self.refresh_btn = QPushButton(_t("proc_refresh"))
@@ -50,7 +51,7 @@ class ProcessView(QWidget):
 
         layout.addLayout(top_bar)
 
-        # Table
+        # Table - UNIFORM BACKGROUND, NO ALTERNATING WHITE ROWS
         self.table = QTableWidget()
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
@@ -65,7 +66,7 @@ class ProcessView(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
+        self.table.setAlternatingRowColors(False)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         layout.addWidget(self.table)
 
@@ -87,14 +88,46 @@ class ProcessView(QWidget):
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(procs))
 
+        name_font = QFont("Segoe UI", 9, QFont.Bold)
+
         for row, p in enumerate(procs):
-            self.table.setItem(row, 0, QTableWidgetItem(str(p["PID"])))
-            self.table.setItem(row, 1, QTableWidgetItem(p["Name"]))
-            self.table.setItem(row, 2, QTableWidgetItem(f"{p['CPU']:.1f}%"))
-            self.table.setItem(row, 3, QTableWidgetItem(f"{p['MemoryMB']:,.1f}"))
-            self.table.setItem(row, 4, QTableWidgetItem(str(p["Threads"])))
-            self.table.setItem(row, 5, QTableWidgetItem(p["User"]))
-            self.table.setItem(row, 6, QTableWidgetItem(p["Status"]))
+            # PID
+            it_pid = QTableWidgetItem(str(p["PID"]))
+            it_pid.setForeground(QColor("#9ca3af"))
+
+            # Name (Bold white)
+            it_name = QTableWidgetItem(p["Name"])
+            it_name.setForeground(QColor("#ffffff"))
+            it_name.setFont(name_font)
+
+            # CPU %
+            cpu_val = p['CPU']
+            it_cpu = QTableWidgetItem(f"{cpu_val:.1f}%")
+            it_cpu.setForeground(QColor("#f85149" if cpu_val > 10 else "#58a6ff"))
+
+            # Memory (MB)
+            it_mem = QTableWidgetItem(f"{p['MemoryMB']:,.1f}")
+            it_mem.setForeground(QColor("#ffffff"))
+
+            # Threads
+            it_thr = QTableWidgetItem(str(p["Threads"]))
+            it_thr.setForeground(QColor("#9ca3af"))
+
+            # User
+            it_usr = QTableWidgetItem(p["User"])
+            it_usr.setForeground(QColor("#9ca3af"))
+
+            # Status
+            it_st = QTableWidgetItem(p["Status"])
+            it_st.setForeground(QColor("#3fb950"))
+
+            self.table.setItem(row, 0, it_pid)
+            self.table.setItem(row, 1, it_name)
+            self.table.setItem(row, 2, it_cpu)
+            self.table.setItem(row, 3, it_mem)
+            self.table.setItem(row, 4, it_thr)
+            self.table.setItem(row, 5, it_usr)
+            self.table.setItem(row, 6, it_st)
 
         self.table.setSortingEnabled(True)
         self._filter_rows(self.search_input.text())

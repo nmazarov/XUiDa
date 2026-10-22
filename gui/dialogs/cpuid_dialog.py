@@ -22,11 +22,11 @@ class CPUIDDialog(QDialog):
         self.setFixedSize(540, 620)
         self.setStyleSheet("""
             QDialog {
-                background-color: #161b22;
-                color: #c9d1d9;
+                background-color: #141a24;
+                color: #ffffff;
             }
             QGroupBox {
-                border: 1px solid #30363d;
+                border: 1px solid #2a364a;
                 border-radius: 6px;
                 margin-top: 10px;
                 font-weight: bold;
@@ -40,6 +40,7 @@ class CPUIDDialog(QDialog):
             }
             QLabel {
                 font-size: 12px;
+                color: #ffffff;
             }
         """)
 
@@ -49,7 +50,7 @@ class CPUIDDialog(QDialog):
 
         # 1. Processor Header Banner
         header_frame = QFrame()
-        header_frame.setStyleSheet("background-color: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px;")
+        header_frame.setStyleSheet("background-color: #19212e; border: 1px solid #2a364a; border-radius: 6px; padding: 10px;")
         h_layout = QVBoxLayout(header_frame)
         h_layout.setSpacing(4)
 

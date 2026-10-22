@@ -82,7 +82,7 @@ class BarChartWidget(QWidget):
         h = self.height()
 
         # Background
-        painter.fillRect(0, 0, w, h, QColor("#161b22"))
+        painter.fillRect(0, 0, w, h, QColor("#141a24"))
 
         max_score = max(score for _, score, _ in self.items) or 1.0
         bar_x_start = 280
@@ -97,9 +97,9 @@ class BarChartWidget(QWidget):
             ratio = score / max_score
             bar_w = int(bar_max_w * ratio)
 
-            # Draw Label
+            # Draw Label (High contrast)
             painter.setFont(bold_font if is_user else font)
-            painter.setPen(QColor("#58a6ff" if is_user else "#c9d1d9"))
+            painter.setPen(QColor("#58a6ff" if is_user else "#ffffff"))
             display_name = f"★ {name}" if is_user else name
             painter.drawText(10, y + 16, bar_x_start - 20, 20, Qt.AlignLeft | Qt.AlignVCenter, display_name)
 
@@ -111,13 +111,13 @@ class BarChartWidget(QWidget):
                 painter.setPen(QPen(QColor("#3fb950"), 1))
                 painter.drawRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h)
             else:
-                painter.fillRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h, QBrush(QColor("#21262d")))
-                painter.setPen(QPen(QColor("#30363d"), 1))
+                painter.fillRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h, QBrush(QColor("#19212e")))
+                painter.setPen(QPen(QColor("#2a364a"), 1))
                 painter.drawRect(bar_x_start, bar_rect_y, max(bar_w, 4), bar_rect_h)
 
-            # Draw Score Text
+            # Draw Score Text (High contrast)
             score_str = f"{score:,.1f} {self.unit}" if isinstance(score, float) else f"{score:,} {self.unit}"
-            painter.setPen(QColor("#58a6ff" if is_user else "#8b949e"))
+            painter.setPen(QColor("#3fb950" if is_user else "#58a6ff"))
             painter.drawText(bar_x_start + bar_w + 10, y + 16, 120, 20, Qt.AlignLeft | Qt.AlignVCenter, score_str)
 
             y += row_height

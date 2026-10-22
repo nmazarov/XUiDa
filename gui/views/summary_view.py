@@ -1,6 +1,6 @@
 """
 XUiDa64 - Computer Summary View Widget
-Recreates classic AIDA64 Computer -> Summary layout with clean categorizations and multi-language support.
+Recreates classic AIDA64 Computer -> Summary layout with uniform background and high-contrast readable styling.
 """
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QMenu, QApplication
@@ -20,13 +20,14 @@ class SummaryView(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
 
+        # Table Widget - UNIFORM BACKGROUND, NO ALTERNATING WHITE ROWS
         self.table = QTableWidget()
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(True)
+        self.table.setAlternatingRowColors(False)
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
         layout.addWidget(self.table)
@@ -97,21 +98,28 @@ class SummaryView(QWidget):
         self.table.setRowCount(total_rows)
 
         curr_row = 0
+        bold_val_font = QFont("Segoe UI", 9, QFont.Bold)
+
         for sec_title, items in sections:
             # Section Header
             h_item = QTableWidgetItem(f"[{sec_title.upper()}]")
             h_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
             h_item.setForeground(QColor("#58a6ff"))
-            h_item.setBackground(QColor("#1f2937"))
+            h_item.setBackground(QColor("#19212e"))
             v_empty = QTableWidgetItem("")
-            v_empty.setBackground(QColor("#1f2937"))
+            v_empty.setBackground(QColor("#19212e"))
             self.table.setItem(curr_row, 0, h_item)
             self.table.setItem(curr_row, 1, v_empty)
             curr_row += 1
 
             for prop, val in items:
                 p_item = QTableWidgetItem(f"  {prop}")
+                p_item.setForeground(QColor("#9ca3af"))
+
                 v_item = QTableWidgetItem(str(val))
+                v_item.setForeground(QColor("#ffffff"))
+                v_item.setFont(bold_val_font)
+
                 self.table.setItem(curr_row, 0, p_item)
                 self.table.setItem(curr_row, 1, v_item)
                 curr_row += 1

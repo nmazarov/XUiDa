@@ -27,12 +27,12 @@ class DesktopSensorPanel(QWidget):
         self.container = QFrame(self)
         self.container.setStyleSheet("""
             QFrame {
-                background-color: rgba(22, 27, 34, 0.92);
-                border: 1px solid #30363d;
+                background-color: rgba(20, 26, 36, 0.95);
+                border: 1px solid #2a364a;
                 border-radius: 10px;
             }
             QLabel {
-                color: #c9d1d9;
+                color: #ffffff;
                 font-family: 'Segoe UI', Arial;
             }
         """)
