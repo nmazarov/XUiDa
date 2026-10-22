@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
-from core.i18n import I18N, _t
+from core.i18n import I18N, _t, _prop
 
 class PropertyTableView(QWidget):
     def __init__(self, parent=None):
@@ -83,15 +83,18 @@ class PropertyTableView(QWidget):
             keys = list(data_dict_or_list[0].keys())
             if not headers:
                 self.table.setColumnCount(len(keys))
-                self.table.setHorizontalHeaderLabels(keys)
+                self.table.setHorizontalHeaderLabels([_prop(k) for k in keys])
                 for i in range(len(keys)):
                     self.table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
+            else:
+                self.table.setHorizontalHeaderLabels([_prop(h) for h in headers])
 
             self.table.setRowCount(len(data_dict_or_list))
             for row_idx, item in enumerate(data_dict_or_list):
                 for col_idx, k in enumerate(keys):
                     val = str(item.get(k, ""))
-                    cell = QTableWidgetItem(val)
+                    tr_val = _prop(val) if val in ("True", "False", "Healthy / OK", "OK", "Running", "Stopped", "Automatic", "Manual", "Disabled", "Enabled", "Paused", "Unknown", "None", "AC Power") else val
+                    cell = QTableWidgetItem(tr_val)
                     cell.setForeground(QColor("#ffffff"))
                     self.table.setItem(row_idx, col_idx, cell)
 
@@ -112,7 +115,7 @@ class PropertyTableView(QWidget):
                     rows.append((f"[{k.upper()}]", "", True))
                     for item in v:
                         if isinstance(item, dict):
-                            line = ", ".join([f"{ik}: {iv}" for ik, iv in item.items()])
+                            line = ", ".join([f"{_prop(ik)}: {_prop(str(iv)) if str(iv) in ('True', 'False', 'OK') else iv}" for ik, iv in item.items()])
                             rows.append(("    •", line, False))
                         else:
                             rows.append(("    •", str(item), False))
@@ -121,8 +124,20 @@ class PropertyTableView(QWidget):
 
             self.table.setRowCount(len(rows))
             for row_idx, (field, value, is_header) in enumerate(rows):
-                f_item = QTableWidgetItem(field)
-                v_item = QTableWidgetItem(value)
+                if is_header:
+                    clean_hdr = field.strip("[] ")
+                    hdr_translated = _prop(clean_hdr)
+                    f_item = QTableWidgetItem(f"[{hdr_translated.upper()}]")
+                else:
+                    stripped = field.strip()
+                    leading_spaces = field[:len(field) - len(field.lstrip())]
+                    f_item = QTableWidgetItem(f"{leading_spaces}{_prop(stripped)}")
+
+                val_str = str(value)
+                if val_str in ("True", "False", "Healthy / OK", "OK", "Running", "Stopped", "Automatic", "Manual", "Disabled", "Enabled", "Paused", "Unknown", "AC Power", "Fully Operational (Clean Boot)"):
+                    val_str = _prop(val_str)
+                v_item = QTableWidgetItem(val_str)
+
                 if is_header:
                     f_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
                     f_item.setForeground(QColor("#00d2ff"))

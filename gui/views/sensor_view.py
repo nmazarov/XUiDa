@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QColor, QFont
-from core.i18n import I18N, _t
+from core.i18n import I18N, _t, _prop
 from core.sensors import Sensors
 
 class MetricCard(QFrame):
@@ -77,12 +77,13 @@ class SensorView(QWidget):
         cards_layout = QGridLayout()
         cards_layout.setSpacing(10)
 
-        self.card_cpu_temp = MetricCard("CPU Temperature", "°C")
-        self.card_gpu_temp = MetricCard("GPU Temperature", "°C")
-        self.card_cpu_load = MetricCard("CPU Utilization", "%")
-        self.card_gpu_load = MetricCard("GPU Load", "%")
-        self.card_ram_load = MetricCard("RAM Utilization", "%")
-        self.card_gpu_fan = MetricCard("GPU Fan Speed", "%")
+        is_ru = (I18N.get_language() == "ru")
+        self.card_cpu_temp = MetricCard("Температура ЦП" if is_ru else "CPU Temperature", "°C")
+        self.card_gpu_temp = MetricCard("Температура GPU" if is_ru else "GPU Temperature", "°C")
+        self.card_cpu_load = MetricCard("Загрузка ЦП" if is_ru else "CPU Utilization", "%")
+        self.card_gpu_load = MetricCard("Загрузка GPU" if is_ru else "GPU Load", "%")
+        self.card_ram_load = MetricCard("Использование ОЗУ" if is_ru else "RAM Utilization", "%")
+        self.card_gpu_fan = MetricCard("Вентиляторы GPU" if is_ru else "GPU Fan Speed", "%")
 
         cards_layout.addWidget(self.card_cpu_temp, 0, 0)
         cards_layout.addWidget(self.card_gpu_temp, 0, 1)
@@ -144,6 +145,14 @@ class SensorView(QWidget):
         self.update_sensors()
 
     def on_language_changed(self, lang):
+        is_ru = (lang == "ru")
+        self.card_cpu_temp.set_title("Температура ЦП" if is_ru else "CPU Temperature")
+        self.card_gpu_temp.set_title("Температура GPU" if is_ru else "GPU Temperature")
+        self.card_cpu_load.set_title("Загрузка ЦП" if is_ru else "CPU Utilization")
+        self.card_gpu_load.set_title("Загрузка GPU" if is_ru else "GPU Load")
+        self.card_ram_load.set_title("Использование ОЗУ" if is_ru else "RAM Utilization")
+        self.card_gpu_fan.set_title("Вентиляторы GPU" if is_ru else "GPU Fan Speed")
+
         self.header_lbl.setText(_t("sensor_header"))
         self.pause_btn.setText(_t("sensor_pause") if self.timer.isActive() else _t("sensor_resume"))
         self.btn_all.setText(_t("sensor_all"))
@@ -153,6 +162,7 @@ class SensorView(QWidget):
         self.btn_clk.setText(_t("sensor_clock"))
         self.btn_usg.setText(_t("sensor_usage"))
         self.table.setHorizontalHeaderLabels([_t("col_sensor"), _t("col_value"), _t("col_unit"), _t("col_category")])
+        self.update_sensors()
 
     def set_filter(self, category):
         self.current_filter = category
@@ -216,8 +226,9 @@ class SensorView(QWidget):
 
         self.table.setRowCount(len(items))
         for row, item in enumerate(items):
-            # Sensor name (High contrast white)
-            it0 = QTableWidgetItem(item.get("Sensor", ""))
+            # Sensor name (High contrast white, translated)
+            raw_sensor = item.get("Sensor", "")
+            it0 = QTableWidgetItem(_prop(raw_sensor))
             it0.setForeground(QColor("#ffffff"))
 
             # Value (Electric blue, bold)
@@ -229,8 +240,9 @@ class SensorView(QWidget):
             it2 = QTableWidgetItem(item.get("Unit", ""))
             it2.setForeground(QColor("#9ca3af"))
 
-            # Category (Soft blue)
-            it3 = QTableWidgetItem(item.get("Category", ""))
+            # Category (Soft blue, translated)
+            raw_cat = item.get("Category", "")
+            it3 = QTableWidgetItem(_prop(raw_cat))
             it3.setForeground(QColor("#93c5fd"))
 
             self.table.setItem(row, 0, it0)

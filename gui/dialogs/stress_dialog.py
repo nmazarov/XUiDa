@@ -90,22 +90,29 @@ class StressTestDialog(QDialog):
         pg.setConfigOption('background', '#141a24')
         pg.setConfigOption('foreground', '#ffffff')
 
-        self.plot_temp = pg.PlotWidget(title="Hardware Temperatures (°C)")
+        is_ru = (I18N.get_language() == "ru")
+        temp_title = "Температуры оборудования (°C)" if is_ru else "Hardware Temperatures (°C)"
+        cpu_t_name = "Температура ЦП" if is_ru else "CPU Temperature"
+        gpu_t_name = "Температура GPU" if is_ru else "GPU Temperature"
+        limit_lbl = "Порог троттлинга (95°C)" if is_ru else "Throttling Limit (95°C)"
+        usage_title = "Загрузка процессора (%)" if is_ru else "CPU Utilization (%)"
+
+        self.plot_temp = pg.PlotWidget(title=temp_title)
         self.plot_temp.showGrid(x=True, y=True, alpha=0.3)
         self.plot_temp.setYRange(20, 110)
         self.plot_temp.addLegend(offset=(10, 10))
 
-        self.curve_cpu_temp = self.plot_temp.plot(pen=pg.mkPen(color='#f1e05a', width=2), name="CPU Temperature")
-        self.curve_gpu_temp = self.plot_temp.plot(pen=pg.mkPen(color='#58a6ff', width=2), name="GPU Temperature")
+        self.curve_cpu_temp = self.plot_temp.plot(pen=pg.mkPen(color='#f1e05a', width=2), name=cpu_t_name)
+        self.curve_gpu_temp = self.plot_temp.plot(pen=pg.mkPen(color='#58a6ff', width=2), name=gpu_t_name)
         
         # Throttling limit line (95°C)
         limit_pen = pg.mkPen(color='#da3633', width=1, style=Qt.DashLine)
-        self.limit_line = pg.InfiniteLine(pos=95, angle=0, pen=limit_pen, label="Throttling Limit (95°C)")
+        self.limit_line = pg.InfiniteLine(pos=95, angle=0, pen=limit_pen, label=limit_lbl)
         self.plot_temp.addItem(self.limit_line)
 
         layout.addWidget(self.plot_temp)
 
-        self.plot_usage = pg.PlotWidget(title="CPU Utilization (%)")
+        self.plot_usage = pg.PlotWidget(title=usage_title)
         self.plot_usage.showGrid(x=True, y=True, alpha=0.3)
         self.plot_usage.setYRange(0, 105)
         self.curve_usage = self.plot_usage.plot(pen=pg.mkPen(color='#3fb950', width=2), fillLevel=0, brush=(63, 185, 80, 50))

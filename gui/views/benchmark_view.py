@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QBrush
 
-from core.i18n import I18N, _t
+from core.i18n import I18N, _t, _prop
 from benchmarks.reference_data import REFERENCE_SCORES
 from benchmarks.memory_bench import MemoryBenchmark
 from benchmarks.cpu_bench import CPUBenchmarks
@@ -138,7 +138,7 @@ class BenchmarkView(QWidget):
         control_bar.addWidget(self.lbl_select)
 
         self.combo = QComboBox()
-        self.combo.addItems(list(REFERENCE_SCORES.keys()))
+        self._populate_combo()
         self.combo.currentIndexChanged.connect(self.on_benchmark_changed)
         control_bar.addWidget(self.combo)
 
@@ -177,13 +177,26 @@ class BenchmarkView(QWidget):
         I18N.register_listener(self.on_language_changed)
         self.on_benchmark_changed()
 
+    def _populate_combo(self):
+        curr_key = self.combo.currentData() if self.combo.count() > 0 else "Memory Read"
+        self.combo.blockSignals(True)
+        self.combo.clear()
+        selected_idx = 0
+        for i, key in enumerate(REFERENCE_SCORES.keys()):
+            self.combo.addItem(_prop(key), key)
+            if key == curr_key:
+                selected_idx = i
+        self.combo.setCurrentIndex(selected_idx)
+        self.combo.blockSignals(False)
+
     def on_language_changed(self, lang):
         self.lbl_select.setText(_t("bench_select"))
         self.start_btn.setText(_t("bench_run"))
+        self._populate_combo()
         self.on_benchmark_changed()
 
     def on_benchmark_changed(self):
-        bench_name = self.combo.currentText()
+        bench_name = self.combo.currentData() or self.combo.currentText()
         bench_meta = REFERENCE_SCORES.get(bench_name, {})
         unit = bench_meta.get("unit", "")
         higher_better = bench_meta.get("higher_is_better", True)
@@ -206,7 +219,7 @@ class BenchmarkView(QWidget):
     def start_benchmark(self):
         if self.worker and self.worker.isRunning():
             return
-        bench_name = self.combo.currentText()
+        bench_name = self.combo.currentData() or self.combo.currentText()
         self.start_btn.setEnabled(False)
         self.progress.setValue(10)
         self.user_score_lbl.setText(_t("bench_running"))
@@ -217,7 +230,7 @@ class BenchmarkView(QWidget):
         self.worker.start()
 
     def on_benchmark_finished(self, score):
-        bench_name = self.combo.currentText()
+        bench_name = self.combo.currentData() or self.combo.currentText()
         self.cached_scores[bench_name] = score
         self.start_btn.setEnabled(True)
         self.progress.setValue(100)

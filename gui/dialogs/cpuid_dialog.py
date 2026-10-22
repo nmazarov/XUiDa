@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QColor
-from core.i18n import I18N, _t
+from core.i18n import I18N, _t, _prop
 from core.cpuid import CPUID
 from core.cpu_info import CPUInfo
 from core.system_info import SystemInfo
@@ -88,7 +88,7 @@ class CPUIDDialog(QDialog):
         self.lbl_family = QLabel(f"{_t('cpuid_family')}: --")
         self.lbl_model = QLabel(f"{_t('cpuid_model')}: --")
         self.lbl_stepping = QLabel(f"{_t('cpuid_stepping')}: --")
-        self.lbl_signature = QLabel("Signature: --")
+        self.lbl_signature = QLabel(f"{_prop('Signature')}: --")
 
         s_layout.addWidget(self.lbl_family, 0, 0)
         s_layout.addWidget(self.lbl_model, 0, 1)
@@ -103,14 +103,15 @@ class CPUIDDialog(QDialog):
         layout.addWidget(self.inst_group)
 
         # 5. Cache Hierarchy Group
+        is_ru = (I18N.get_language() == "ru")
         self.cache_group = QGroupBox(_t("cpuid_caches"))
         ca_layout = QGridLayout(self.cache_group)
         ca_layout.setSpacing(6)
 
-        self.lbl_l1d = QLabel("L1 Data: --")
-        self.lbl_l1i = QLabel("L1 Inst: --")
-        self.lbl_l2 = QLabel("L2 Cache: --")
-        self.lbl_l3 = QLabel("L3 Cache: --")
+        self.lbl_l1d = QLabel("L1 Данные: --" if is_ru else "L1 Data: --")
+        self.lbl_l1i = QLabel("L1 Инструкции: --" if is_ru else "L1 Inst: --")
+        self.lbl_l2 = QLabel("L2 Кэш: --" if is_ru else "L2 Cache: --")
+        self.lbl_l3 = QLabel("L3 Кэш: --" if is_ru else "L3 Cache: --")
 
         ca_layout.addWidget(self.lbl_l1d, 0, 0)
         ca_layout.addWidget(self.lbl_l1i, 0, 1)
@@ -138,9 +139,12 @@ class CPUIDDialog(QDialog):
     def load_data(self):
         cpuid_info = CPUID.get_info()
         cpu_details = CPUInfo.get_details()
+        is_ru = (I18N.get_language() == "ru")
 
+        cores_word = "Ядер" if is_ru else "Cores"
+        threads_word = "Потоков" if is_ru else "Threads"
         self.proc_name_lbl.setText(cpuid_info.get("brand", "Unknown Processor"))
-        self.socket_lbl.setText(f"{cpu_details.get('Socket', 'LGA1700')} | {cpu_details.get('PhysicalCores')} Cores, {cpu_details.get('LogicalCores')} Threads")
+        self.socket_lbl.setText(f"{cpu_details.get('Socket', 'LGA1700')} | {cpu_details.get('PhysicalCores')} {cores_word}, {cpu_details.get('LogicalCores')} {threads_word}")
 
         self.lbl_cpu_clock.setText(f"{_t('cpuid_core_speed')}: {cpu_details.get('CurrentClock')}")
         self.lbl_voltage.setText(f"{_t('cpuid_voltage')}: {cpu_details.get('Voltage')}")
@@ -148,7 +152,7 @@ class CPUIDDialog(QDialog):
         self.lbl_family.setText(f"{_t('cpuid_family')}: {cpuid_info.get('family', '0')}")
         self.lbl_model.setText(f"{_t('cpuid_model')}: {cpuid_info.get('model', '0')}")
         self.lbl_stepping.setText(f"{_t('cpuid_stepping')}: {cpuid_info.get('stepping', '0')}")
-        self.lbl_signature.setText(f"Signature: {cpuid_info.get('signature', '0')}")
+        self.lbl_signature.setText(f"{_prop('Signature')}: {cpuid_info.get('signature', '0')}")
 
         # Instruction sets
         features = cpuid_info.get("features", {})
@@ -174,14 +178,19 @@ class CPUIDDialog(QDialog):
 
         # Caches
         caches = cpuid_info.get("caches", [])
+        l1d_str = "L1 Данные" if is_ru else "L1 Data"
+        l1i_str = "L1 Инструкции" if is_ru else "L1 Inst"
+        l2_str = "L2 Кэш" if is_ru else "L2 Cache"
+        l3_str = "L3 Кэш" if is_ru else "L3 Cache"
+
         for c in caches:
             lvl = c.get("level", "")
             sz = c.get("size_kb", 0)
             if "L1 Data" in lvl:
-                self.lbl_l1d.setText(f"L1 Data: {sz} KB")
+                self.lbl_l1d.setText(f"{l1d_str}: {sz} КБ" if is_ru else f"L1 Data: {sz} KB")
             elif "L1 Instruction" in lvl:
-                self.lbl_l1i.setText(f"L1 Inst: {sz} KB")
+                self.lbl_l1i.setText(f"{l1i_str}: {sz} КБ" if is_ru else f"L1 Inst: {sz} KB")
             elif "L2" in lvl:
-                self.lbl_l2.setText(f"L2 Cache: {sz // 1024} MB ({sz} KB)")
+                self.lbl_l2.setText(f"{l2_str}: {sz // 1024} МБ ({sz} КБ)" if is_ru else f"L2 Cache: {sz // 1024} MB ({sz} KB)")
             elif "L3" in lvl:
-                self.lbl_l3.setText(f"L3 Cache: {sz // 1024} MB")
+                self.lbl_l3.setText(f"{l3_str}: {sz // 1024} МБ" if is_ru else f"L3 Cache: {sz // 1024} MB")

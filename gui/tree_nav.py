@@ -8,7 +8,7 @@ import os
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QFont, QIcon
-from core.i18n import I18N, _t
+from core.i18n import I18N, _t, _prop
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets", "tree")
@@ -109,7 +109,7 @@ class NavigationTree(QTreeWidget):
             self.item_registry.append((cat_item, cat_key, True, cat_key))
 
             for sub_key, fallback_internal_id in sub_items:
-                title = _t(sub_key)
+                title = _prop(sub_key)
                 child = QTreeWidgetItem(cat_item, [title])
                 child.setFont(0, normal_font)
                 child.setData(0, Qt.UserRole, fallback_internal_id)
@@ -142,4 +142,7 @@ class NavigationTree(QTreeWidget):
 
     def on_language_changed(self, lang):
         for item, key, is_cat, internal_id in self.item_registry:
-            item.setText(0, _t(key))
+            if is_cat:
+                item.setText(0, _t(key))
+            else:
+                item.setText(0, _prop(key))

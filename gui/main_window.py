@@ -106,6 +106,10 @@ class MainWindow(QMainWindow):
         self.act_osd.setShortcut("F9")
         self.act_osd.triggered.connect(self.toggle_sensor_panel)
 
+        self.act_osd_gaming = self.view_menu.addAction("🎮 Режим игры (клик сквозь OSD)")
+        self.act_osd_gaming.setCheckable(True)
+        self.act_osd_gaming.triggered.connect(self.toggle_osd_gaming_mode)
+
         self.act_theme = self.view_menu.addAction(_t("act_theme"))
         self.act_theme.triggered.connect(self.toggle_theme)
 
@@ -331,6 +335,10 @@ class MainWindow(QMainWindow):
         act_osd = tray_menu.addAction(_t("act_osd"))
         act_osd.triggered.connect(self.toggle_sensor_panel)
 
+        self.tray_act_gaming = tray_menu.addAction("🎮 Режим игры (клик насквозь)")
+        self.tray_act_gaming.setCheckable(True)
+        self.tray_act_gaming.triggered.connect(self.toggle_osd_gaming_mode)
+
         act_bench = tray_menu.addAction(_t("act_disk_bench"))
         act_bench.triggered.connect(self.open_disk_bench)
 
@@ -474,7 +482,9 @@ class MainWindow(QMainWindow):
         ]
         if internal_id in bench_names:
             self.stack.setCurrentWidget(self.benchmark_view)
-            idx = self.benchmark_view.combo.findText(internal_id)
+            idx = self.benchmark_view.combo.findData(internal_id)
+            if idx < 0:
+                idx = self.benchmark_view.combo.findText(internal_id)
             if idx >= 0:
                 self.benchmark_view.combo.setCurrentIndex(idx)
             return
@@ -588,6 +598,16 @@ class MainWindow(QMainWindow):
             self.sensor_panel.hide()
         else:
             self.sensor_panel.show()
+
+    def toggle_osd_gaming_mode(self):
+        if self.sensor_panel is None:
+            self.sensor_panel = DesktopSensorPanel()
+        if not self.sensor_panel.isVisible():
+            self.sensor_panel.show()
+        self.sensor_panel.toggle_click_through()
+        active = self.sensor_panel.click_through
+        self.act_osd_gaming.setChecked(active)
+        self.tray_act_gaming.setChecked(active)
 
     def open_report_wizard(self):
         dlg = ReportWizardDialog(self)

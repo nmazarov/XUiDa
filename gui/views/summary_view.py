@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
-from core.i18n import I18N, _t
+from core.i18n import I18N, _t, _prop
 from core.system_info import SystemInfo
 from core.cpu_info import CPUInfo
 from core.memory_info import MemoryInfo
@@ -106,6 +106,18 @@ class SummaryView(QWidget):
         log_drives = StorageInfo.get_logical_drives()
         adapters = NetworkInfo.get_adapters()
 
+        is_ru = (I18N.get_language() == "ru")
+        cores_word = "Ядер" if is_ru else "Cores"
+        threads_word = "Потоков" if is_ru else "Threads"
+        base_word = "Базовая" if is_ru else "Base"
+        used_word = "Занято" if is_ru else "Used"
+        free_word = "Свободно" if is_ru else "Free"
+        pc_type = f"Компьютер на базе ACPI x64 ({sys_info.get('Architecture')})" if is_ru else f"ACPI x64-based PC ({sys_info.get('Architecture')})"
+        os_label = f"{sys_info.get('OSName')} (Сборка {sys_info.get('Build')})" if is_ru else f"{sys_info.get('OSName')} (Build {sys_info.get('Build')})"
+        mon_default = "Универсальный монитор" if is_ru else "Generic Monitor"
+        net_default = "Отсутствует" if is_ru else "None"
+        smart_val = "Исправен (Норма)" if (is_ru and phys_drives) else ("Healthy / OK" if phys_drives else "OK")
+
         # Update Top Chips
         cpu_brand = cpu.get('Brand', 'Processor')
         cpu_short = cpu_brand.replace("Intel(R) Core(TM) ", "").replace("AMD Ryzen ", "Ryzen ")
@@ -123,10 +135,12 @@ class SummaryView(QWidget):
         os_short = os_name.replace("Microsoft Windows ", "Win ")
         self.chip_os.findChild(QLabel, "chip_val").setText(os_short[:22])
 
+        dimm_text = f"Установлено модулей: {len(spd)} (" + ", ".join([f"{m.get('CapacityGB')} ГБ {m.get('MemoryType')}" for m in spd]) + ")" if is_ru else f"{len(spd)} Module(s) Installed (" + ", ".join([f"{m.get('CapacityGB')}GB {m.get('MemoryType')}" for m in spd]) + ")"
+
         sections = [
             (_t("sec_computer"), [
-                ("Computer Type", f"ACPI x64-based PC ({sys_info.get('Architecture')})"),
-                ("Operating System", f"{sys_info.get('OSName')} (Build {sys_info.get('Build')})"),
+                ("Computer Type", pc_type),
+                ("Operating System", os_label),
                 ("OS Architecture", sys_info.get("Architecture")),
                 ("Computer Name", sys_info.get("ComputerName")),
                 ("User Name", sys_info.get("RegisteredUser")),
@@ -134,30 +148,30 @@ class SummaryView(QWidget):
                 ("Install Date", sys_info.get("InstallDate"))
             ]),
             (_t("sec_motherboard"), [
-                ("CPU Type", f"{cpu.get('Brand')} ({cpu.get('PhysicalCores')} Cores, {cpu.get('LogicalCores')} Threads)"),
-                ("CPU Clock", f"{cpu.get('CurrentClock')} (Base: {cpu.get('BaseClock')})"),
+                ("CPU Type", f"{cpu.get('Brand')} ({cpu.get('PhysicalCores')} {cores_word}, {cpu.get('LogicalCores')} {threads_word})"),
+                ("CPU Clock", f"{cpu.get('CurrentClock')} ({base_word}: {cpu.get('BaseClock')})"),
                 ("Motherboard Name", f"{mb_info.get('Manufacturer')} {mb_info.get('Product')}"),
                 ("Motherboard Chipset", mb_info.get("Chipset")),
-                ("System Memory", f"{mem.get('TotalGB')} GB (Used: {mem.get('UsedGB')} GB, Free: {mem.get('FreeGB')} GB)"),
-                ("DIMM Modules", f"{len(spd)} Module(s) Installed (" + ", ".join([f"{m.get('CapacityGB')}GB {m.get('MemoryType')}" for m in spd]) + ")"),
+                ("System Memory", f"{mem.get('TotalGB')} GB ({used_word}: {mem.get('UsedGB')} GB, {free_word}: {mem.get('FreeGB')} GB)"),
+                ("DIMM Modules", dimm_text),
                 ("BIOS Type", f"{bios_info.get('Vendor')} ({bios_info.get('Version')})"),
                 ("BIOS Release Date", bios_info.get("ReleaseDate")),
-                ("Boot Mode", f"{bios_info.get('BootMode')} (SecureBoot: {bios_info.get('SecureBoot')})")
+                ("Boot Mode", f"{bios_info.get('BootMode')} (SecureBoot: {_prop(str(bios_info.get('SecureBoot')))})")
             ]),
             (_t("sec_display"), [
                 ("Video Adapter", gpus[0].get("Name") if gpus else "Generic Display Adapter"),
                 ("Video Driver", gpus[0].get("DriverVersion") if gpus else "N/A"),
                 ("Installed VRAM", f"{gpus[0].get('VRAM_MB', 0)} MB" if gpus else "N/A"),
                 ("Current Resolution", gpus[0].get("Resolution") if gpus else "N/A"),
-                ("Connected Monitor", ", ".join([m.get("Name") for m in monitors]) if monitors else "Generic Monitor")
+                ("Connected Monitor", ", ".join([m.get("Name") for m in monitors]) if monitors else mon_default)
             ]),
             (_t("sec_storage"), [
-                ("Storage Drives", ", ".join([f"{d.get('Model')} ({d.get('SizeGB')}GB {d.get('MediaType')})" for d in phys_drives])),
-                ("Partitions", " | ".join([f"{ld.get('Device')} {ld.get('TotalGB')}GB ({ld.get('FreeGB')}GB free)" for ld in log_drives])),
-                ("SMART Status", "Healthy / OK" if phys_drives else "OK")
+                ("Storage Drives", ", ".join([f"{d.get('Model')} ({d.get('SizeGB')} ГБ {d.get('MediaType')})" for d in phys_drives])),
+                ("Partitions", " | ".join([f"{ld.get('Device')} {ld.get('TotalGB')} ГБ ({ld.get('FreeGB')} ГБ {free_word.lower()})" for ld in log_drives])),
+                ("SMART Status", smart_val)
             ]),
             (_t("sec_network"), [
-                ("Primary Network Adapter", adapters[0].get("Name") if adapters else "None"),
+                ("Primary Network Adapter", adapters[0].get("Name") if adapters else net_default),
                 ("IP Address", adapters[0].get("IPv4") if adapters else "N/A"),
                 ("MAC Address", adapters[0].get("MAC") if adapters else "N/A"),
                 ("Link Speed", adapters[0].get("Speed") if adapters else "N/A"),
@@ -184,10 +198,15 @@ class SummaryView(QWidget):
             curr_row += 1
 
             for prop, val in items:
-                p_item = QTableWidgetItem(f"    {prop}")
+                p_item = QTableWidgetItem(f"    {_prop(prop)}")
                 p_item.setForeground(QColor("#cbd5e1"))
 
-                v_item = QTableWidgetItem(str(val))
+                # Translate common boolean/status values
+                val_str = str(val)
+                if val_str in ("True", "False", "Healthy / OK", "OK"):
+                    val_str = _prop(val_str)
+
+                v_item = QTableWidgetItem(val_str)
                 v_item.setForeground(QColor("#ffffff"))
                 v_item.setFont(bold_val_font)
 
