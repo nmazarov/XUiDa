@@ -12,6 +12,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QFont
 from core.i18n import _t
 from benchmarks.disk_bench import DiskBenchmark
+from gui.widgets.animated_widgets import AnimatedPushButton
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -135,19 +136,8 @@ class DiskBenchDialog(QDialog):
         self.size_combo.addItem("1024 МБ (Стресс)", 1024)
         ctrl_layout.addWidget(self.size_combo, 2)
 
-        self.start_btn = QPushButton("▶ Начать тест")
-        self.start_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #238636;
-                color: #ffffff;
-                font-weight: bold;
-                border-radius: 6px;
-                padding: 8px 18px;
-            }
-            QPushButton:hover {
-                background-color: #2ea043;
-            }
-        """)
+        self.start_btn = AnimatedPushButton("▶ Начать тест", is_primary=True)
+        self.start_btn.setFixedSize(140, 36)
         self.start_btn.clicked.connect(self.toggle_benchmark)
         ctrl_layout.addWidget(self.start_btn)
 

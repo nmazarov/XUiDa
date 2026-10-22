@@ -84,18 +84,19 @@ QToolButton {{
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER_COLOR};
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-weight: 500;
 }}
 
 QToolButton:hover {{
-    background-color: #222d3e;
-    border-color: {ACCENT_BLUE};
+    background-color: #212c3e;
+    border: 1px solid #00d2ff;
     color: #ffffff;
 }}
 
 QToolButton:pressed {{
     background-color: {SELECTION_COLOR};
+    border: 1px solid #00d2ff;
     color: #ffffff;
 }}
 
@@ -105,7 +106,7 @@ QSplitter::handle {{
 }}
 
 QSplitter::handle:hover {{
-    background-color: {ACCENT_BLUE};
+    background-color: #00d2ff;
 }}
 
 QTreeWidget {{
@@ -126,8 +127,8 @@ QTreeWidget::item {{
 }}
 
 QTreeWidget::item:hover {{
-    background-color: {CARD_BG};
-    color: {ACCENT_BLUE};
+    background-color: #1a2536;
+    color: #00d2ff;
 }}
 
 QTreeWidget::item:selected {{
@@ -278,7 +279,7 @@ QProgressBar {{
 }}
 
 QProgressBar::chunk {{
-    background-color: #238636;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #00d2ff);
     border-radius: 5px;
 }}
 
@@ -286,36 +287,40 @@ QStatusBar {{
     background-color: {BG_COLOR};
     color: {TEXT_SECONDARY};
     border-top: 1px solid {BORDER_COLOR};
-    padding: 2px 8px;
+    padding: 3px 10px;
     font-size: 12px;
 }}
 
 QScrollBar:vertical {{
     background: {BG_COLOR};
-    width: 10px;
+    width: 8px;
     margin: 0;
 }}
 
 QScrollBar::handle:vertical {{
     background: {BORDER_COLOR};
     min-height: 25px;
-    border-radius: 5px;
+    border-radius: 4px;
 }}
 
 QScrollBar::handle:vertical:hover {{
-    background: {ACCENT_BLUE};
+    background: #00d2ff;
 }}
 
 QScrollBar:horizontal {{
     background: {BG_COLOR};
-    height: 10px;
+    height: 8px;
     margin: 0;
 }}
 
 QScrollBar::handle:horizontal {{
     background: {BORDER_COLOR};
     min-width: 25px;
-    border-radius: 5px;
+    border-radius: 4px;
+}}
+
+QScrollBar::handle:horizontal:hover {{
+    background: #00d2ff;
 }}
 
 QScrollBar::add-line, QScrollBar::sub-line {{

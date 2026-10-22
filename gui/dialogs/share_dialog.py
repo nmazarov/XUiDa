@@ -18,6 +18,7 @@ from core.system_info import SystemInfo
 from core.memory_info import MemoryInfo
 from core.gpu_info import GPUInfo
 from core.storage_info import StorageInfo
+from gui.widgets.animated_widgets import AnimatedPushButton
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -146,13 +147,13 @@ class ShareConfigDialog(QDialog):
         t1_layout.addWidget(self.preview_lbl, 1)
 
         btn_row = QHBoxLayout()
-        self.btn_save_png = QPushButton("💾 Сохранить изображение (PNG)")
-        self.btn_save_png.setStyleSheet("background-color: #238636; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px;")
+        self.btn_save_png = AnimatedPushButton("💾 Сохранить изображение (PNG)", is_primary=True)
+        self.btn_save_png.setFixedHeight(36)
         self.btn_save_png.clicked.connect(self._save_image)
         btn_row.addWidget(self.btn_save_png)
 
-        self.btn_copy_img = QPushButton("📋 Скопировать картинку в буфер")
-        self.btn_copy_img.setStyleSheet("background-color: #1f6feb; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px;")
+        self.btn_copy_img = AnimatedPushButton("📋 Скопировать картинку в буфер", is_primary=False)
+        self.btn_copy_img.setFixedHeight(36)
         self.btn_copy_img.clicked.connect(self._copy_image_clipboard)
         btn_row.addWidget(self.btn_copy_img)
 
@@ -170,8 +171,8 @@ class ShareConfigDialog(QDialog):
         self.md_text.setPlainText(self._get_markdown())
         t2_layout.addWidget(self.md_text)
 
-        btn_copy_md = QPushButton("📋 Скопировать Markdown в буфер")
-        btn_copy_md.setStyleSheet("background-color: #238636; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px;")
+        btn_copy_md = AnimatedPushButton("📋 Скопировать Markdown в буфер", is_primary=True)
+        btn_copy_md.setFixedHeight(36)
         btn_copy_md.clicked.connect(lambda: self._copy_text(self.md_text.toPlainText()))
         t2_layout.addWidget(btn_copy_md)
         tabs.addTab(tab_md, "📝 Markdown (Discord / Reddit)")
@@ -186,8 +187,8 @@ class ShareConfigDialog(QDialog):
         self.bb_text.setPlainText(self._get_bbcode())
         t3_layout.addWidget(self.bb_text)
 
-        btn_copy_bb = QPushButton("📋 Скопировать BB-Code в буфер")
-        btn_copy_bb.setStyleSheet("background-color: #238636; color: white; font-weight: bold; padding: 8px 16px; border-radius: 6px;")
+        btn_copy_bb = AnimatedPushButton("📋 Скопировать BB-Code в буфер", is_primary=True)
+        btn_copy_bb.setFixedHeight(36)
         btn_copy_bb.clicked.connect(lambda: self._copy_text(self.bb_text.toPlainText()))
         t3_layout.addWidget(btn_copy_bb)
         tabs.addTab(tab_bb, "💬 BB-Code (Форумы 4PDA)")

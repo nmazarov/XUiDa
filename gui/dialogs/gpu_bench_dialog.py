@@ -12,6 +12,7 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QIcon, QFont
 from core.gpu_info import GPUInfo
 from benchmarks.gpu_bench import GPUBenchmark
+from gui.widgets.animated_widgets import AnimatedPushButton
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -119,19 +120,8 @@ class GPUBenchDialog(QDialog):
             self.gpu_combo.addItem(f"{g.get('Name', 'GPU')} ({vram} MB VRAM)", i)
         ctrl_layout.addWidget(self.gpu_combo, 2)
 
-        self.start_btn = QPushButton("▶ Начать тест GPU")
-        self.start_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #238636;
-                color: #ffffff;
-                font-weight: bold;
-                border-radius: 6px;
-                padding: 8px 18px;
-            }
-            QPushButton:hover {
-                background-color: #2ea043;
-            }
-        """)
+        self.start_btn = AnimatedPushButton("▶ Начать тест GPU", is_primary=True)
+        self.start_btn.setFixedSize(160, 36)
         self.start_btn.clicked.connect(self.start_bench)
         ctrl_layout.addWidget(self.start_btn)
 

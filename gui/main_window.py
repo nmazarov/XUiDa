@@ -32,6 +32,7 @@ from gui.dialogs.disk_bench_dialog import DiskBenchDialog
 from gui.dialogs.gpu_bench_dialog import GPUBenchDialog
 from gui.dialogs.monitor_diag_dialog import MonitorDiagDialog
 from gui.dialogs.share_dialog import ShareConfigDialog
+from gui.widgets.animated_widgets import AnimatedStackedWidget, LivePulseDot, SparklineWidget
 
 from core.system_info import SystemInfo
 from core.cpu_info import CPUInfo
@@ -249,8 +250,8 @@ class MainWindow(QMainWindow):
         sidebar.setMaximumWidth(340)
         splitter.addWidget(sidebar)
 
-        # Right: Views Stack
-        self.stack = QStackedWidget()
+        # Right: Views Stack with crossfade animation
+        self.stack = AnimatedStackedWidget()
 
         # Dedicated Views
         self.summary_view = SummaryView()
@@ -273,24 +274,37 @@ class MainWindow(QMainWindow):
     def _init_status_bar(self):
         sb = self.statusBar()
 
+        # Animated live pulse dot
+        self.pulse_dot = LivePulseDot(self)
+        self.live_lbl = QLabel("LIVE")
+        self.live_lbl.setStyleSheet("color: #10b981; font-weight: bold; font-size: 11px;")
+
         self.sb_cpu_lbl = QLabel(f"{_t('cpu_usage')}: 0%")
         self.sb_cpu_bar = QProgressBar()
-        self.sb_cpu_bar.setFixedSize(90, 14)
+        self.sb_cpu_bar.setFixedSize(85, 14)
         self.sb_cpu_bar.setTextVisible(False)
+
+        # Real-time sparkline graph
+        self.sb_sparkline = SparklineWidget(self)
 
         self.sb_ram_lbl = QLabel(f"{_t('ram_usage')}: 0%")
         self.sb_ram_bar = QProgressBar()
-        self.sb_ram_bar.setFixedSize(90, 14)
+        self.sb_ram_bar.setFixedSize(85, 14)
         self.sb_ram_bar.setTextVisible(False)
 
         brand = CPUID.get_info().get("brand", "x86-64 Processor")
         self.sb_hw_lbl = QLabel(f"{_t('hardware')}: {brand}")
         self.sb_hw_lbl.setStyleSheet("color: #58a6ff; font-weight: bold;")
 
+        # Left to Right Layout
+        sb.addPermanentWidget(self.pulse_dot)
+        sb.addPermanentWidget(self.live_lbl)
+        sb.addPermanentWidget(QLabel("  |  "))
         sb.addPermanentWidget(self.sb_hw_lbl)
         sb.addPermanentWidget(QLabel("  |  "))
         sb.addPermanentWidget(self.sb_cpu_lbl)
         sb.addPermanentWidget(self.sb_cpu_bar)
+        sb.addPermanentWidget(self.sb_sparkline)
         sb.addPermanentWidget(QLabel("  |  "))
         sb.addPermanentWidget(self.sb_ram_lbl)
         sb.addPermanentWidget(self.sb_ram_bar)
@@ -345,6 +359,7 @@ class MainWindow(QMainWindow):
 
         self.sb_cpu_lbl.setText(f"{_t('cpu_usage')}: {cpu_p}%")
         self.sb_cpu_bar.setValue(cpu_p)
+        self.sb_sparkline.add_value(cpu_p)
 
         self.sb_ram_lbl.setText(f"{_t('ram_usage')}: {ram_p}%")
         self.sb_ram_bar.setValue(ram_p)

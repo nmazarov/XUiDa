@@ -1,9 +1,13 @@
 """
 XUiDa64 - Computer Summary View Widget
-Recreates classic AIDA64 Computer -> Summary layout with uniform background and high-contrast readable styling.
+Recreates classic AIDA64 Computer -> Summary layout with cyber metric chips,
+spanning section headers, uniform dark background, and high-contrast readable styling.
 """
 
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView, QMenu, QApplication
+from PyQt5.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QTableWidget,
+    QTableWidgetItem, QHeaderView, QMenu, QApplication
+)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
 from core.i18n import I18N, _t
@@ -18,9 +22,34 @@ class SummaryView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
 
-        # Table Widget - UNIFORM BACKGROUND, NO ALTERNATING WHITE ROWS
+        # 1. Quick Metric Chips Banner
+        self.chips_frame = QFrame()
+        self.chips_frame.setStyleSheet("""
+            QFrame {
+                background-color: #161e2b;
+                border: 1px solid #2a364a;
+                border-radius: 8px;
+            }
+        """)
+        chips_layout = QHBoxLayout(self.chips_frame)
+        chips_layout.setContentsMargins(12, 8, 12, 8)
+        chips_layout.setSpacing(12)
+
+        self.chip_cpu = self._create_chip("⚙️ ЦП", "Intel Core i7", "#00d2ff")
+        self.chip_gpu = self._create_chip("🎮 GPU", "GeForce RTX", "#10b981")
+        self.chip_ram = self._create_chip("🧠 ОЗУ", "32 GB DDR5", "#f59e0b")
+        self.chip_os = self._create_chip("🪟 ОС", "Windows 11", "#a855f7")
+
+        chips_layout.addWidget(self.chip_cpu)
+        chips_layout.addWidget(self.chip_gpu)
+        chips_layout.addWidget(self.chip_ram)
+        chips_layout.addWidget(self.chip_os)
+        layout.addWidget(self.chips_frame)
+
+        # 2. Detailed Summary Table Widget
         self.table = QTableWidget()
         self.table.setColumnCount(2)
         self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
@@ -34,6 +63,31 @@ class SummaryView(QWidget):
 
         I18N.register_listener(self.on_language_changed)
         self.refresh_data()
+
+    def _create_chip(self, label, val, accent_hex):
+        chip = QFrame()
+        chip.setStyleSheet(f"""
+            QFrame {{
+                background-color: #192231;
+                border: 1px solid #263346;
+                border-left: 3px solid {accent_hex};
+                border-radius: 6px;
+                padding: 4px 8px;
+            }}
+        """)
+        c_layout = QVBoxLayout(chip)
+        c_layout.setContentsMargins(6, 4, 6, 4)
+        c_layout.setSpacing(2)
+
+        lbl = QLabel(label)
+        lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {accent_hex};")
+        val_lbl = QLabel(val)
+        val_lbl.setStyleSheet("font-size: 12px; font-weight: 600; color: #ffffff;")
+        val_lbl.setObjectName("chip_val")
+
+        c_layout.addWidget(lbl)
+        c_layout.addWidget(val_lbl)
+        return chip
 
     def on_language_changed(self, lang):
         self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
@@ -51,6 +105,23 @@ class SummaryView(QWidget):
         phys_drives = StorageInfo.get_physical_drives()
         log_drives = StorageInfo.get_logical_drives()
         adapters = NetworkInfo.get_adapters()
+
+        # Update Top Chips
+        cpu_brand = cpu.get('Brand', 'Processor')
+        cpu_short = cpu_brand.replace("Intel(R) Core(TM) ", "").replace("AMD Ryzen ", "Ryzen ")
+        self.chip_cpu.findChild(QLabel, "chip_val").setText(cpu_short[:22])
+
+        gpu_name = gpus[0].get("Name", "Graphics") if gpus else "Integrated GPU"
+        gpu_short = gpu_name.replace("NVIDIA GeForce ", "").replace("AMD Radeon ", "")
+        self.chip_gpu.findChild(QLabel, "chip_val").setText(gpu_short[:22])
+
+        ram_total = mem.get("TotalGB", 16)
+        spd_type = spd[0].get("MemoryType", "RAM") if spd and len(spd) > 0 else "RAM"
+        self.chip_ram.findChild(QLabel, "chip_val").setText(f"{ram_total} GB {spd_type}")
+
+        os_name = sys_info.get("OSName", "Windows")
+        os_short = os_name.replace("Microsoft Windows ", "Win ")
+        self.chip_os.findChild(QLabel, "chip_val").setText(os_short[:22])
 
         sections = [
             (_t("sec_computer"), [
@@ -95,25 +166,25 @@ class SummaryView(QWidget):
         ]
 
         total_rows = sum(len(items) + 1 for _, items in sections)
+        self.table.clearSpans()
         self.table.setRowCount(total_rows)
 
         curr_row = 0
         bold_val_font = QFont("Segoe UI", 9, QFont.Bold)
 
         for sec_title, items in sections:
-            # Section Header
-            h_item = QTableWidgetItem(f"[{sec_title.upper()}]")
+            # Styled Spanning Section Header
+            h_item = QTableWidgetItem(f"   ▶  {sec_title.upper()}")
             h_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
-            h_item.setForeground(QColor("#58a6ff"))
-            h_item.setBackground(QColor("#19212e"))
-            v_empty = QTableWidgetItem("")
-            v_empty.setBackground(QColor("#19212e"))
+            h_item.setForeground(QColor("#00d2ff"))
+            h_item.setBackground(QColor("#182232"))
+
             self.table.setItem(curr_row, 0, h_item)
-            self.table.setItem(curr_row, 1, v_empty)
+            self.table.setSpan(curr_row, 0, 1, 2)
             curr_row += 1
 
             for prop, val in items:
-                p_item = QTableWidgetItem(f"  {prop}")
+                p_item = QTableWidgetItem(f"    {prop}")
                 p_item.setForeground(QColor("#9ca3af"))
 
                 v_item = QTableWidgetItem(str(val))
