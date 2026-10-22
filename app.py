@@ -8,6 +8,7 @@ import os
 import ctypes
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 
 # Ensure root directory is in sys.path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -32,6 +33,11 @@ def main():
     app.setApplicationName("XUiDa64 Extreme Edition")
     app.setApplicationVersion("1.0.0")
     app.setOrganizationName("OpenAIDA Community")
+
+    # Set Application Icon
+    icon_path = os.path.join(BASE_DIR, "assets", "icon.png")
+    if os.path.exists(icon_path):
+        app.setWindowIcon(QIcon(icon_path))
 
     window = MainWindow()
     window.show()

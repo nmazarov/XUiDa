@@ -9,10 +9,10 @@ import psutil
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QSplitter,
     QStackedWidget, QMenuBar, QMenu, QAction, QToolBar, QStatusBar,
-    QLabel, QProgressBar, QMessageBox, QActionGroup
+    QLabel, QProgressBar, QMessageBox, QActionGroup, QFrame
 )
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont, QPixmap
 
 from core.i18n import I18N, _t
 from gui.styles import DARK_THEME, CLASSIC_THEME
@@ -44,6 +44,12 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(_t("app_title"))
         self.resize(1200, 800)
         self.setMinimumSize(960, 620)
+
+        # Set Application Icon
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(base_dir, "assets", "icon.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
 
         self.dark_mode = True
         self.setStyleSheet(DARK_THEME)
@@ -167,11 +173,42 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Horizontal)
         splitter.setHandleWidth(2)
 
-        # Left: Navigation Tree
+        # Left: Sidebar container with logo and navigation tree
+        sidebar = QWidget()
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(4, 4, 4, 4)
+        sidebar_layout.setSpacing(6)
+
+        # Brand Logo Header
+        logo_frame = QFrame()
+        logo_frame.setStyleSheet("""
+            QFrame {
+                background-color: #19212e;
+                border: 1px solid #2a364a;
+                border-radius: 6px;
+                padding: 4px;
+            }
+        """)
+        logo_layout = QHBoxLayout(logo_frame)
+        logo_layout.setContentsMargins(6, 4, 6, 4)
+
+        logo_label = QLabel()
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        logo_path = os.path.join(base_dir, "assets", "logo_small.png")
+        if os.path.exists(logo_path):
+            pix = QPixmap(logo_path)
+            logo_label.setPixmap(pix.scaledToWidth(220, Qt.SmoothTransformation))
+            logo_label.setAlignment(Qt.AlignCenter)
+        logo_layout.addWidget(logo_label)
+        sidebar_layout.addWidget(logo_frame)
+
+        # Navigation Tree (collapsible accordion)
         self.tree = NavigationTree()
-        self.tree.setMinimumWidth(230)
-        self.tree.setMaximumWidth(340)
-        splitter.addWidget(self.tree)
+        sidebar_layout.addWidget(self.tree)
+
+        sidebar.setMinimumWidth(240)
+        sidebar.setMaximumWidth(340)
+        splitter.addWidget(sidebar)
 
         # Right: Views Stack
         self.stack = QStackedWidget()
@@ -270,6 +307,13 @@ class MainWindow(QMainWindow):
     def on_nav_selected(self, current, previous):
         if not current:
             return
+
+        # If a category header was selected and has children, select its first child
+        if current.childCount() > 0:
+            if current.isExpanded():
+                self.tree.setCurrentItem(current.child(0))
+            return
+
         internal_id = current.data(0, Qt.UserRole)
         if not internal_id:
             internal_id = current.text(0)
@@ -373,6 +417,7 @@ class MainWindow(QMainWindow):
             for j in range(top.childCount()):
                 child = top.child(j)
                 if child.data(0, Qt.UserRole) == target_id:
+                    top.setExpanded(True)
                     self.tree.setCurrentItem(child)
                     return
 

@@ -21,6 +21,8 @@ def build():
         sys.executable, "-m", "PyInstaller",
         "--noconsole",
         "--name=XUiDa64",
+        "--icon=assets/icon.ico",
+        "--add-data=assets;assets",
         "--clean",
         "--noconfirm",
         "--onedir",
