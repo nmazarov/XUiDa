@@ -258,8 +258,8 @@ class MainWindow(QMainWindow):
         self.tree = NavigationTree()
         sidebar_layout.addWidget(self.tree)
 
-        sidebar.setMinimumWidth(240)
-        sidebar.setMaximumWidth(340)
+        sidebar.setMinimumWidth(280)
+        sidebar.setMaximumWidth(360)
         splitter.addWidget(sidebar)
 
         # Right: Views Stack with crossfade animation
@@ -282,6 +282,7 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(self.stack)
         splitter.setStretchFactor(1, 4)
+        splitter.setSizes([285, 915])
 
         self.setCentralWidget(splitter)
 

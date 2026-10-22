@@ -186,11 +186,13 @@ class CleanerView(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Категория очистки", "Описание / Расположение", "Файлов", "Занимаемый объем"])
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
+        self.table.setColumnWidth(0, 360)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(36)
         self.table.setAlternatingRowColors(False)
         self.table.setStyleSheet("""
             QTableWidget {
@@ -259,18 +261,19 @@ class CleanerView(QWidget):
                 border: 1px solid #2d3e56;
                 border-left: 4px solid {accent_hex};
                 border-radius: 6px;
-                padding: 4px 10px;
-                min-width: 110px;
+                padding: 6px 12px;
+                min-width: 120px;
+                min-height: 52px;
             }}
         """)
         c_layout = QVBoxLayout(chip)
-        c_layout.setContentsMargins(6, 4, 6, 4)
-        c_layout.setSpacing(2)
+        c_layout.setContentsMargins(8, 6, 8, 6)
+        c_layout.setSpacing(4)
 
         lbl = QLabel(label)
-        lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {accent_hex};")
+        lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {accent_hex}; background: transparent;")
         val_lbl = QLabel(val)
-        val_lbl.setStyleSheet("font-size: 14px; font-weight: bold; color: #ffffff;")
+        val_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #ffffff; background: transparent;")
         val_lbl.setObjectName("chip_val")
 
         c_layout.addWidget(lbl)
@@ -293,23 +296,56 @@ class CleanerView(QWidget):
         bold_font = QFont("Segoe UI", 9, QFont.Bold)
 
         for row, cat in enumerate(self.categories_data):
-            # Column 0: Checkbox + Icon + Name
+            self.table.setRowHeight(row, 36)
+
+            # Column 0: Centered container widget preventing vertical font clipping
+            cell_widget = QWidget()
+            cell_widget.setStyleSheet("background: transparent;")
+            cell_layout = QHBoxLayout(cell_widget)
+            cell_layout.setContentsMargins(10, 0, 8, 0)
+            cell_layout.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
+
             chk = QCheckBox(f"{cat.get('icon', '📁')}  {cat.get('name')}")
             chk.setChecked(cat.get("enabled", True))
-            chk.setStyleSheet("color: #ffffff; font-weight: bold; font-size: 12px; padding: 4px;")
+            chk.setStyleSheet("""
+                QCheckBox {
+                    color: #ffffff;
+                    font-weight: 600;
+                    font-size: 12px;
+                    spacing: 8px;
+                    background: transparent;
+                }
+                QCheckBox::indicator {
+                    width: 16px;
+                    height: 16px;
+                    border: 1px solid #38bdf8;
+                    border-radius: 3px;
+                    background: #172131;
+                }
+                QCheckBox::indicator:hover {
+                    border: 1px solid #00d2ff;
+                    background: #1e2c40;
+                }
+                QCheckBox::indicator:checked {
+                    background: #1f6feb;
+                    border: 1px solid #38bdf8;
+                }
+            """)
             chk.stateChanged.connect(lambda state, r=row: self._on_checkbox_changed(r, state))
-            self.table.setCellWidget(row, 0, chk)
+            cell_layout.addWidget(chk)
+            self.table.setCellWidget(row, 0, cell_widget)
 
             # Column 1: Description / Path
             desc_item = QTableWidgetItem(cat.get("desc", ""))
             desc_item.setForeground(QColor("#94a3b8"))
+            desc_item.setTextAlignment(Qt.AlignVCenter | Qt.AlignLeft)
             self.table.setItem(row, 1, desc_item)
 
             # Column 2: Files count
             fc = cat.get("files_count", 0)
             fc_str = f"{fc:,} шт." if fc > 0 else "--"
             fc_item = QTableWidgetItem(fc_str)
-            fc_item.setTextAlignment(Qt.AlignCenter)
+            fc_item.setTextAlignment(Qt.AlignVCenter | Qt.AlignCenter)
             fc_item.setForeground(QColor("#cbd5e1"))
             self.table.setItem(row, 2, fc_item)
 
@@ -317,7 +353,7 @@ class CleanerView(QWidget):
             sz = cat.get("size_bytes", 0)
             sz_str = SystemCleaner.format_size(sz) if sz > 0 else "--"
             sz_item = QTableWidgetItem(sz_str)
-            sz_item.setTextAlignment(Qt.AlignCenter)
+            sz_item.setTextAlignment(Qt.AlignVCenter | Qt.AlignCenter)
             sz_item.setFont(bold_font)
             sz_item.setForeground(QColor("#38bdf8" if sz > 0 else "#64748b"))
             self.table.setItem(row, 3, sz_item)
@@ -332,9 +368,11 @@ class CleanerView(QWidget):
         new_state = not all_checked
         self.toggle_all_btn.setText("☑ Выбрать все" if new_state else "☐ Снять все")
         for r in range(self.table.rowCount()):
-            chk = self.table.cellWidget(r, 0)
-            if chk:
-                chk.setChecked(new_state)
+            cell_w = self.table.cellWidget(r, 0)
+            if cell_w:
+                chk = cell_w.findChild(QCheckBox)
+                if chk:
+                    chk.setChecked(new_state)
             if r < len(self.categories_data):
                 self.categories_data[r]["enabled"] = new_state
         self._update_selected_summary()
