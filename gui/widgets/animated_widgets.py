@@ -132,27 +132,14 @@ class SparklineWidget(QWidget):
 
 
 class AnimatedStackedWidget(QStackedWidget):
-    """QStackedWidget with smooth 160ms crossfade animation on view switching."""
+    """QStackedWidget with instant crisp switching, guaranteeing 100% opacity and ClearType subpixel rendering."""
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.fade_duration = 160
 
     def setCurrentWidget(self, widget):
-        current = self.currentWidget()
-        if current == widget:
-            return
-
-        # Apply smooth opacity fade-in to newly selected widget
-        effect = QGraphicsOpacityEffect(widget)
-        widget.setGraphicsEffect(effect)
-
-        anim = QPropertyAnimation(effect, b"opacity")
-        anim.setDuration(self.fade_duration)
-        anim.setStartValue(0.1)
-        anim.setEndValue(1.0)
-
+        if widget.graphicsEffect():
+            widget.setGraphicsEffect(None)
         super().setCurrentWidget(widget)
-        anim.start(QAbstractAnimation.DeleteWhenStopped)
 
 
 class AnimatedPushButton(QPushButton):

@@ -68,21 +68,21 @@ class SummaryView(QWidget):
         chip = QFrame()
         chip.setStyleSheet(f"""
             QFrame {{
-                background-color: #192231;
-                border: 1px solid #263346;
-                border-left: 3px solid {accent_hex};
+                background-color: #1a2536;
+                border: 1px solid #2d3e56;
+                border-left: 4px solid {accent_hex};
                 border-radius: 6px;
                 padding: 4px 8px;
             }}
         """)
         c_layout = QVBoxLayout(chip)
-        c_layout.setContentsMargins(6, 4, 6, 4)
-        c_layout.setSpacing(2)
+        c_layout.setContentsMargins(8, 6, 8, 6)
+        c_layout.setSpacing(3)
 
         lbl = QLabel(label)
-        lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {accent_hex};")
+        lbl.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {accent_hex};")
         val_lbl = QLabel(val)
-        val_lbl.setStyleSheet("font-size: 12px; font-weight: 600; color: #ffffff;")
+        val_lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #ffffff;")
         val_lbl.setObjectName("chip_val")
 
         c_layout.addWidget(lbl)
@@ -177,7 +177,7 @@ class SummaryView(QWidget):
             h_item = QTableWidgetItem(f"   ▶  {sec_title.upper()}")
             h_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
             h_item.setForeground(QColor("#00d2ff"))
-            h_item.setBackground(QColor("#182232"))
+            h_item.setBackground(QColor("#1b2738"))
 
             self.table.setItem(curr_row, 0, h_item)
             self.table.setSpan(curr_row, 0, 1, 2)
@@ -185,7 +185,7 @@ class SummaryView(QWidget):
 
             for prop, val in items:
                 p_item = QTableWidgetItem(f"    {prop}")
-                p_item.setForeground(QColor("#9ca3af"))
+                p_item.setForeground(QColor("#cbd5e1"))
 
                 v_item = QTableWidgetItem(str(val))
                 v_item.setForeground(QColor("#ffffff"))

@@ -125,11 +125,11 @@ class PropertyTableView(QWidget):
                 v_item = QTableWidgetItem(value)
                 if is_header:
                     f_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
-                    f_item.setForeground(QColor("#58a6ff"))
-                    f_item.setBackground(QColor("#19212e"))
-                    v_item.setBackground(QColor("#19212e"))
+                    f_item.setForeground(QColor("#00d2ff"))
+                    f_item.setBackground(QColor("#1b2738"))
+                    v_item.setBackground(QColor("#1b2738"))
                 else:
-                    f_item.setForeground(QColor("#9ca3af"))
+                    f_item.setForeground(QColor("#cbd5e1"))
                     v_item.setForeground(QColor("#ffffff"))
                 self.table.setItem(row_idx, 0, f_item)
                 self.table.setItem(row_idx, 1, v_item)
