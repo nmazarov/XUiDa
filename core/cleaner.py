@@ -16,10 +16,16 @@ class SystemCleaner:
         """
         Returns list of cleanable system & browser cache categories with paths.
         """
-        local_app_data = os.environ.get("LOCALAPPDATA", "")
-        app_data = os.environ.get("APPDATA", "")
-        temp_dir = os.environ.get("TEMP", "")
-        windir = os.environ.get("WINDIR", "C:\\Windows")
+        if os.environ.get("XUIDA_DEMO_MODE") == "1":
+            local_app_data = r"C:\Users\Workstation\AppData\Local"
+            app_data = r"C:\Users\Workstation\AppData\Roaming"
+            temp_dir = r"C:\Users\Workstation\AppData\Local\Temp"
+            windir = r"C:\Windows"
+        else:
+            local_app_data = os.environ.get("LOCALAPPDATA", "")
+            app_data = os.environ.get("APPDATA", "")
+            temp_dir = os.environ.get("TEMP", "")
+            windir = os.environ.get("WINDIR", "C:\\Windows")
 
         categories = [
             {

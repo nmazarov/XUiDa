@@ -143,17 +143,20 @@ class ShareConfigDialog(QDialog):
 
         self.preview_lbl = QLabel()
         self.preview_lbl.setAlignment(Qt.AlignCenter)
+        self.preview_lbl.setFixedHeight(380)
         self.preview_lbl.setStyleSheet("border: 1px solid #2a364a; border-radius: 8px; background: #0f141c;")
         t1_layout.addWidget(self.preview_lbl, 1)
 
         btn_row = QHBoxLayout()
         self.btn_save_png = AnimatedPushButton("💾 Сохранить изображение (PNG)", is_primary=True)
         self.btn_save_png.setFixedHeight(36)
+        self.btn_save_png.setMinimumWidth(240)
         self.btn_save_png.clicked.connect(self._save_image)
         btn_row.addWidget(self.btn_save_png)
 
         self.btn_copy_img = AnimatedPushButton("📋 Скопировать картинку в буфер", is_primary=False)
         self.btn_copy_img.setFixedHeight(36)
+        self.btn_copy_img.setMinimumWidth(240)
         self.btn_copy_img.clicked.connect(self._copy_image_clipboard)
         btn_row.addWidget(self.btn_copy_img)
 
@@ -308,7 +311,7 @@ class ShareConfigDialog(QDialog):
         data = img_rgb.tobytes("raw", "RGBA")
         qim = QImage(data, img.size[0], img.size[1], QImage.Format_RGBA8888)
         pix = QPixmap.fromImage(qim)
-        self.preview_lbl.setPixmap(pix.scaledToWidth(800, Qt.SmoothTransformation))
+        self.preview_lbl.setPixmap(pix.scaledToHeight(360, Qt.SmoothTransformation))
 
     def _save_image(self):
         if not self.generated_pil_img:

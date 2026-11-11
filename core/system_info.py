@@ -10,9 +10,15 @@ import datetime
 import win32com.client
 import winreg
 
+from core.demo_profile import (
+    is_demo_mode, get_demo_os_info, get_demo_motherboard_info, get_demo_bios_info
+)
+
 class SystemInfo:
     @staticmethod
     def get_motherboard_info():
+        if is_demo_mode():
+            return get_demo_motherboard_info()
         info = {
             "Manufacturer": "Unknown",
             "Product": "Unknown",
@@ -34,6 +40,8 @@ class SystemInfo:
 
     @staticmethod
     def get_bios_info():
+        if is_demo_mode():
+            return get_demo_bios_info()
         info = {
             "Vendor": "Unknown",
             "Version": "Unknown",
@@ -69,6 +77,8 @@ class SystemInfo:
 
     @staticmethod
     def get_os_info():
+        if is_demo_mode():
+            return get_demo_os_info()
         boot_time = datetime.datetime.fromtimestamp(SystemInfo.get_boot_time())
         uptime_seconds = int(time.time() - boot_time.timestamp())
         days, rem = divmod(uptime_seconds, 86400)

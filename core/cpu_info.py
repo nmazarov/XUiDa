@@ -15,11 +15,18 @@ try:
 except ImportError:
     from .cpuid import CPUID
 
+try:
+    from core.demo_profile import is_demo_mode, get_demo_cpu_info
+except ImportError:
+    from .demo_profile import is_demo_mode, get_demo_cpu_info
+
 class CPUInfo:
     _cached_wmi_details = None
 
     @classmethod
     def get_details(cls):
+        if is_demo_mode():
+            return get_demo_cpu_info()
         cpuid_data = CPUID.get_info()
         brand = cpuid_data.get("brand", "Unknown Processor")
         vendor = cpuid_data.get("vendor", "Unknown")

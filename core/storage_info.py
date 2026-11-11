@@ -7,11 +7,18 @@ import win32com.client
 import subprocess
 import json
 
+try:
+    from core.demo_profile import is_demo_mode, get_demo_physical_drives, get_demo_logical_drives
+except ImportError:
+    from .demo_profile import is_demo_mode, get_demo_physical_drives, get_demo_logical_drives
+
 class StorageInfo:
     _cached_physical_drives = None
 
     @staticmethod
     def get_logical_drives():
+        if is_demo_mode():
+            return get_demo_logical_drives()
         drives = []
         for part in psutil.disk_partitions(all=False):
             try:
@@ -37,6 +44,8 @@ class StorageInfo:
 
     @classmethod
     def get_physical_drives(cls, force_refresh=False):
+        if is_demo_mode():
+            return get_demo_physical_drives()
         if cls._cached_physical_drives is not None and not force_refresh:
             return cls._cached_physical_drives
 

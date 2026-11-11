@@ -3,6 +3,7 @@ XUiDa64 - Direct x86/x64 CPUID Decoder
 Executes native CPUID instructions and decodes processor flags, architecture, and cache topology.
 """
 
+import os
 import ctypes
 import struct
 
@@ -62,6 +63,31 @@ class CPUID:
     @classmethod
     def get_info(cls):
         """Returns structured dictionary of CPUID information."""
+        if os.environ.get("XUIDA_DEMO_MODE") == "1":
+            return {
+                "vendor": "GenuineIntel",
+                "brand": "Intel(R) Core(TM) i9-14900KS",
+                "signature": "000B0671h",
+                "family": 6,
+                "model": 183,
+                "stepping": 1,
+                "type": 0,
+                "max_cpuid_level": 32,
+                "logical_cores": 32,
+                "apic_id": 0,
+                "features": {
+                    "MMX": True, "SSE": True, "SSE2": True, "SSE3": True, "SSSE3": True,
+                    "SSE4.1": True, "SSE4.2": True, "AVX": True, "AVX2": True, "AVX512F": False,
+                    "FMA": True, "AES": True, "SHA": True, "BMI1": True, "BMI2": True,
+                    "VMX": True, "HyperThreading": True
+                },
+                "caches": [
+                    {"level": "L1 Data", "size_kb": 384, "ways": 12},
+                    {"level": "L1 Instruction", "size_kb": 512, "ways": 8},
+                    {"level": "L2 Unified", "size_kb": 32768, "ways": 16},
+                    {"level": "L3 Unified", "size_kb": 36864, "ways": 16}
+                ]
+            }
         if not cls._init_native():
             return {"error": "CPUID execution unavailable"}
 

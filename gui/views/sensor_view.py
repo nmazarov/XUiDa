@@ -214,7 +214,13 @@ class SensorView(QWidget):
                 self.card_gpu_load.set_value(val)
 
         for item in sensors.get("Fans", []):
-            self.card_gpu_fan.set_value(item.get("Value", 0))
+            name = item.get("Sensor", "")
+            if "GPU" in name or "Видеокарта" in name:
+                self.card_gpu_fan.set_value(item.get("Value", 0))
+                break
+        else:
+            if sensors.get("Fans"):
+                self.card_gpu_fan.set_value(sensors.get("Fans")[0].get("Value", 0))
 
         # Filter items for table
         if self.current_filter == "All":

@@ -4,6 +4,7 @@ Interactive CCleaner-style utility providing safe scanning, selection,
 and 1-click cleanup of Windows temp files, browser caches, crash dumps, and Recycle Bin.
 """
 
+import os
 import psutil
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QProgressBar,
@@ -118,10 +119,13 @@ class CleanerView(QWidget):
         self.chip_files.set_subtitle("Временные файлы")
 
         free_c = "--"
-        try:
-            free_c = f"{psutil.disk_usage('C:').free / (1024**3):.1f} ГБ"
-        except Exception:
-            pass
+        if os.environ.get("XUIDA_DEMO_MODE") == "1":
+            free_c = "1,420.5 ГБ"
+        else:
+            try:
+                free_c = f"{psutil.disk_usage('C:').free / (1024**3):.1f} ГБ"
+            except Exception:
+                pass
         self.chip_free = self._create_stat_chip("СВОБОДНО C:", free_c, "#10b981")
         self.chip_free.set_subtitle("Системный раздел")
 

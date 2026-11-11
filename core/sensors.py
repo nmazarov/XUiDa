@@ -8,9 +8,16 @@ import win32com.client
 from core.gpu_info import GPUInfo
 from core.network_info import NetworkInfo
 
+try:
+    from core.demo_profile import is_demo_mode, get_demo_sensors
+except ImportError:
+    from .demo_profile import is_demo_mode, get_demo_sensors
+
 class Sensors:
     @staticmethod
     def get_all_sensors():
+        if is_demo_mode():
+            return get_demo_sensors()
         data = {
             "Temperatures": [],
             "Fans": [],

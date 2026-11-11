@@ -5,6 +5,11 @@ XUiDa64 - Memory & SPD Information Module
 import psutil
 import win32com.client
 
+try:
+    from core.demo_profile import is_demo_mode, get_demo_memory_info, get_demo_spd_modules
+except ImportError:
+    from .demo_profile import is_demo_mode, get_demo_memory_info, get_demo_spd_modules
+
 class MemoryInfo:
     SMBIOS_MEMORY_TYPES = {
         20: "DDR",
@@ -19,6 +24,8 @@ class MemoryInfo:
 
     @staticmethod
     def get_summary():
+        if is_demo_mode():
+            return get_demo_memory_info()
         vm = psutil.virtual_memory()
         swap = psutil.swap_memory()
         return {
@@ -34,6 +41,8 @@ class MemoryInfo:
 
     @staticmethod
     def get_spd_modules():
+        if is_demo_mode():
+            return get_demo_spd_modules()
         modules = []
         try:
             wmi = win32com.client.GetObject("winmgmts:")

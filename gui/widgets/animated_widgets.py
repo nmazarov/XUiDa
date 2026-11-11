@@ -407,6 +407,13 @@ class AnimatedPushButton(QPushButton):
         self.anim.start()
         super().leaveEvent(event)
 
+    def sizeHint(self):
+        fm = self.fontMetrics()
+        w = fm.horizontalAdvance(self.text()) + 32
+        h = max(34, fm.height() + 14)
+        from PyQt5.QtCore import QSize
+        return QSize(w, h)
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
@@ -432,3 +439,45 @@ class AnimatedPushButton(QPushButton):
         painter.setFont(QFont("Segoe UI Variable Text", 10, QFont.DemiBold if self.is_primary else QFont.Normal))
         painter.setPen(QColor(255, 255, 255))
         painter.drawText(QRectF(0, 0, w, h), Qt.AlignCenter, self.text())
+
+
+class DockPill(QFrame):
+    """
+    Craft & Motion bottom dock capsule pill.
+    Features subtle glassmorphic background, border transition, and smooth micro-interactions.
+    """
+    def __init__(self, parent=None, bg_color="rgba(18, 23, 34, 0.85)", border_color="#1c2536", hover_border="#38bdf8"):
+        super().__init__(parent)
+        self.bg_color = bg_color
+        self.border_color = border_color
+        self.hover_border = hover_border
+        self._is_hovered = False
+        self.setFixedHeight(27)
+        self.setAttribute(Qt.WA_Hover, True)
+        self._apply_style()
+
+    def _apply_style(self):
+        bc = self.hover_border if self._is_hovered else self.border_color
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: {self.bg_color};
+                border: 1px solid {bc};
+                border-radius: 13px;
+                padding: 1px 6px;
+            }}
+            QLabel {{
+                border: none;
+                background: transparent;
+            }}
+        """)
+
+    def enterEvent(self, event):
+        self._is_hovered = True
+        self._apply_style()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self._is_hovered = False
+        self._apply_style()
+        super().leaveEvent(event)
+

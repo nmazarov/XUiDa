@@ -7,12 +7,19 @@ import socket
 import psutil
 import win32com.client
 
+try:
+    from core.demo_profile import is_demo_mode, get_demo_adapters
+except ImportError:
+    from .demo_profile import is_demo_mode, get_demo_adapters
+
 class NetworkInfo:
     _last_io = None
     _last_time = None
 
     @staticmethod
     def get_adapters():
+        if is_demo_mode():
+            return get_demo_adapters()
         adapters = []
         stats = psutil.net_if_stats()
         addrs = psutil.net_if_addrs()

@@ -342,13 +342,19 @@ QProgressBar::chunk {{
     border-radius: 5px;
 }}
 
-/* Status Bar */
+/* Status Bar - Obsidian Telemetry Dock */
 QStatusBar {{
-    background-color: {BG_SURFACE};
+    background-color: #0b0e14;
     color: {TEXT_SECONDARY};
-    border-top: 1px solid {BORDER_COLOR};
-    padding: 4px 10px;
+    border-top: 1px solid #161e2b;
+    min-height: 36px;
+    max-height: 36px;
+    padding: 0px 6px;
     font-size: 11px;
+}}
+
+QStatusBar::item {{
+    border: none;
 }}
 
 /* Scrollbar - Ultra clean 6px pill design */

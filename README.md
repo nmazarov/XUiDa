@@ -50,6 +50,13 @@
 | *Скорость линейного чтения/записи и 4K IOPS* | *Вычисления одинарной и двойной точности FLOPS* |
 | <img src="assets/disk_bench_preview.png" alt="Тестирование дисков" width="450"/> | <img src="assets/gpu_bench_preview.png" alt="Бенчмарк видеокарты" width="450"/> |
 
+<br/>
+
+### 📸 Экспорт верифицированной киберпанк-карточки ПК (Share PC Card)
+*Генерация стильной графической карточки конфигурации 16:9 для соцсетей, а также готовый Markdown и BB-Code.*
+<br/>
+<img src="assets/share_preview.png" alt="Карточка спецификации ПК" width="850"/>
+
 </div>
 
 ---

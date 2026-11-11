@@ -6,6 +6,11 @@ Direct NVML interface for NVIDIA cards + WMI / Win32 API fallback for AMD/Intel.
 import ctypes
 import win32com.client
 
+try:
+    from core.demo_profile import is_demo_mode, get_demo_gpus, get_demo_monitors
+except ImportError:
+    from .demo_profile import is_demo_mode, get_demo_gpus, get_demo_monitors
+
 class GPUInfo:
     _nvml_loaded = False
     _nvml = None
@@ -98,6 +103,8 @@ class GPUInfo:
 
     @classmethod
     def get_all_gpus(cls):
+        if is_demo_mode():
+            return get_demo_gpus()
         gpus = []
         nv_gpus = cls.get_nvidia_details()
         nv_map = {g["Name"]: g for g in nv_gpus}
@@ -140,6 +147,8 @@ class GPUInfo:
 
     @staticmethod
     def get_monitors():
+        if is_demo_mode():
+            return get_demo_monitors()
         monitors = []
         try:
             wmi = win32com.client.GetObject("winmgmts:root\\wmi")

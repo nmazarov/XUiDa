@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QLabel, QProgressBar, QMessageBox, QActionGroup, QFrame, QSystemTrayIcon
 )
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon, QFont, QPixmap
+from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor
 
 from core.i18n import I18N, _t
 from gui.styles import DARK_THEME, CLASSIC_THEME
@@ -33,7 +33,7 @@ from gui.dialogs.disk_bench_dialog import DiskBenchDialog
 from gui.dialogs.gpu_bench_dialog import GPUBenchDialog
 from gui.dialogs.monitor_diag_dialog import MonitorDiagDialog
 from gui.dialogs.share_dialog import ShareConfigDialog
-from gui.widgets.animated_widgets import AnimatedStackedWidget, LivePulseDot, SparklineWidget
+from gui.widgets.animated_widgets import AnimatedStackedWidget, LivePulseDot, SparklineWidget, DockPill
 
 from core.system_info import SystemInfo
 from core.cpu_info import CPUInfo
@@ -288,41 +288,130 @@ class MainWindow(QMainWindow):
 
     def _init_status_bar(self):
         sb = self.statusBar()
+        sb.setSizeGripEnabled(False)
+        sb.setFixedHeight(38)
 
-        # Animated live pulse dot
+        # Main Dock container
+        dock = QWidget(self)
+        dock_layout = QHBoxLayout(dock)
+        dock_layout.setContentsMargins(8, 3, 8, 3)
+        dock_layout.setSpacing(8)
+
+        # 1. LIVE Telemetry Pill
+        self.pill_live = DockPill(self, bg_color="rgba(16, 185, 129, 0.08)", border_color="rgba(16, 185, 129, 0.28)", hover_border="#10b981")
+        live_layout = QHBoxLayout(self.pill_live)
+        live_layout.setContentsMargins(8, 2, 8, 2)
+        live_layout.setSpacing(6)
         self.pulse_dot = LivePulseDot(self)
-        self.live_lbl = QLabel("LIVE")
-        self.live_lbl.setStyleSheet("color: #10b981; font-weight: bold; font-size: 11px;")
+        self.live_lbl = QLabel("LIVE TELEMETRY")
+        self.live_lbl.setStyleSheet("color: #34d399; font-weight: 700; font-size: 10px; letter-spacing: 0.5px;")
+        live_layout.addWidget(self.pulse_dot)
+        live_layout.addWidget(self.live_lbl)
+        dock_layout.addWidget(self.pill_live)
 
-        self.sb_cpu_lbl = QLabel(f"{_t('cpu_usage')}: 0%")
-        self.sb_cpu_bar = QProgressBar()
-        self.sb_cpu_bar.setFixedSize(85, 14)
-        self.sb_cpu_bar.setTextVisible(False)
-
-        # Real-time sparkline graph
-        self.sb_sparkline = SparklineWidget(self)
-
-        self.sb_ram_lbl = QLabel(f"{_t('ram_usage')}: 0%")
-        self.sb_ram_bar = QProgressBar()
-        self.sb_ram_bar.setFixedSize(85, 14)
-        self.sb_ram_bar.setTextVisible(False)
-
+        # 2. Hardware Spec Pill
+        self.pill_hw = DockPill(self, bg_color="rgba(56, 189, 248, 0.06)", border_color="rgba(56, 189, 248, 0.22)", hover_border="#38bdf8")
+        hw_layout = QHBoxLayout(self.pill_hw)
+        hw_layout.setContentsMargins(10, 2, 10, 2)
+        hw_layout.setSpacing(6)
+        hw_icon = QLabel("⚡")
+        hw_icon.setStyleSheet("color: #38bdf8; font-size: 11px;")
         brand = CPUID.get_info().get("brand", "x86-64 Processor")
-        self.sb_hw_lbl = QLabel(f"{_t('hardware')}: {brand}")
-        self.sb_hw_lbl.setStyleSheet("color: #58a6ff; font-weight: bold;")
+        brand_short = brand.replace("Intel(R) Core(TM) ", "").replace("AMD Ryzen ", "Ryzen ")
+        self.sb_hw_lbl = QLabel(f"{brand_short} • x86-64")
+        self.sb_hw_lbl.setStyleSheet("color: #e2e8f0; font-weight: 600; font-size: 11px;")
+        hw_layout.addWidget(hw_icon)
+        hw_layout.addWidget(self.sb_hw_lbl)
+        dock_layout.addWidget(self.pill_hw)
 
-        # Left to Right Layout
-        sb.addPermanentWidget(self.pulse_dot)
-        sb.addPermanentWidget(self.live_lbl)
-        sb.addPermanentWidget(QLabel("  |  "))
-        sb.addPermanentWidget(self.sb_hw_lbl)
-        sb.addPermanentWidget(QLabel("  |  "))
-        sb.addPermanentWidget(self.sb_cpu_lbl)
-        sb.addPermanentWidget(self.sb_cpu_bar)
-        sb.addPermanentWidget(self.sb_sparkline)
-        sb.addPermanentWidget(QLabel("  |  "))
-        sb.addPermanentWidget(self.sb_ram_lbl)
-        sb.addPermanentWidget(self.sb_ram_bar)
+        # 3. System Status Pill
+        self.pill_status = DockPill(self, bg_color="#121722", border_color="#1c2536", hover_border="#10b981")
+        status_layout = QHBoxLayout(self.pill_status)
+        status_layout.setContentsMargins(8, 2, 8, 2)
+        status_layout.setSpacing(5)
+        is_ru = (I18N.get_language() == "ru")
+        self.sb_status_lbl = QLabel("🛡️ СИСТЕМА: СТАБИЛЬНО" if is_ru else "🛡️ SYSTEM: OPTIMAL")
+        self.sb_status_lbl.setStyleSheet("color: #94a3b8; font-weight: 600; font-size: 10px;")
+        status_layout.addWidget(self.sb_status_lbl)
+        dock_layout.addWidget(self.pill_status)
+
+        # Elastic Spacer pushes resource metrics to the right
+        dock_layout.addStretch(1)
+
+        # 4. CPU Resource Pill
+        self.pill_cpu = DockPill(self, bg_color="#121722", border_color="#1c2536", hover_border="#38bdf8")
+        cpu_layout = QHBoxLayout(self.pill_cpu)
+        cpu_layout.setContentsMargins(8, 2, 8, 2)
+        cpu_layout.setSpacing(6)
+        cpu_tag = QLabel("ЦП")
+        cpu_tag.setStyleSheet("color: #64748b; font-weight: 700; font-size: 10px;")
+        self.sb_cpu_lbl = QLabel("0%")
+        self.sb_cpu_lbl.setStyleSheet("color: #38bdf8; font-weight: 700; font-size: 11px;")
+        self.sb_cpu_bar = QProgressBar()
+        self.sb_cpu_bar.setFixedSize(54, 6)
+        self.sb_cpu_bar.setTextVisible(False)
+        self.sb_cpu_bar.setStyleSheet("""
+            QProgressBar {
+                background: #0b0f17;
+                border: 1px solid #1c2637;
+                border-radius: 3px;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #0284c7, stop:1 #38bdf8);
+                border-radius: 2px;
+            }
+        """)
+        self.sb_sparkline = SparklineWidget(self, max_points=24, line_color=QColor(56, 189, 248))
+        self.sb_sparkline.setFixedSize(54, 18)
+        cpu_layout.addWidget(cpu_tag)
+        cpu_layout.addWidget(self.sb_cpu_lbl)
+        cpu_layout.addWidget(self.sb_cpu_bar)
+        cpu_layout.addWidget(self.sb_sparkline)
+        dock_layout.addWidget(self.pill_cpu)
+
+        # 5. RAM Resource Pill
+        self.pill_ram = DockPill(self, bg_color="#121722", border_color="#1c2536", hover_border="#a855f7")
+        ram_layout = QHBoxLayout(self.pill_ram)
+        ram_layout.setContentsMargins(8, 2, 8, 2)
+        ram_layout.setSpacing(6)
+        ram_tag = QLabel("ОЗУ")
+        ram_tag.setStyleSheet("color: #64748b; font-weight: 700; font-size: 10px;")
+        self.sb_ram_lbl = QLabel("0%")
+        self.sb_ram_lbl.setStyleSheet("color: #a855f7; font-weight: 700; font-size: 11px;")
+        self.sb_ram_bar = QProgressBar()
+        self.sb_ram_bar.setFixedSize(54, 6)
+        self.sb_ram_bar.setTextVisible(False)
+        self.sb_ram_bar.setStyleSheet("""
+            QProgressBar {
+                background: #0b0f17;
+                border: 1px solid #1c2637;
+                border-radius: 3px;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #7c3aed, stop:1 #c084fc);
+                border-radius: 2px;
+            }
+        """)
+        ram_layout.addWidget(ram_tag)
+        ram_layout.addWidget(self.sb_ram_lbl)
+        ram_layout.addWidget(self.sb_ram_bar)
+        dock_layout.addWidget(self.pill_ram)
+
+        # 6. Thermal Health Pill
+        self.pill_temp = DockPill(self, bg_color="#121722", border_color="#1c2536", hover_border="#10b981")
+        temp_layout = QHBoxLayout(self.pill_temp)
+        temp_layout.setContentsMargins(8, 2, 8, 2)
+        temp_layout.setSpacing(5)
+        temp_icon = QLabel("🔥")
+        temp_icon.setStyleSheet("font-size: 10px;")
+        self.sb_temp_lbl = QLabel("-- °C")
+        self.sb_temp_lbl.setStyleSheet("color: #10b981; font-weight: 700; font-size: 11px;")
+        temp_layout.addWidget(temp_icon)
+        temp_layout.addWidget(self.sb_temp_lbl)
+        dock_layout.addWidget(self.pill_temp)
+
+        # Add single dock stretching across status bar
+        sb.addWidget(dock, 1)
 
         self._update_status_bar()
 
@@ -373,28 +462,51 @@ class MainWindow(QMainWindow):
             self.hide()
 
     def _update_status_bar(self):
-        cpu_p = int(psutil.cpu_percent(interval=None))
-        ram_p = int(psutil.virtual_memory().percent)
+        from core.demo_profile import is_demo_mode
+        if is_demo_mode():
+            cpu_p = 14
+            ram_p = 28
+            max_cpu_temp = 38.5
+        else:
+            cpu_p = int(psutil.cpu_percent(interval=None))
+            ram_p = int(psutil.virtual_memory().percent)
+            max_cpu_temp = None
 
-        self.sb_cpu_lbl.setText(f"{_t('cpu_usage')}: {cpu_p}%")
+        self.sb_cpu_lbl.setText(f"{cpu_p}%")
         self.sb_cpu_bar.setValue(cpu_p)
         self.sb_sparkline.add_value(cpu_p)
 
-        self.sb_ram_lbl.setText(f"{_t('ram_usage')}: {ram_p}%")
+        self.sb_ram_lbl.setText(f"{ram_p}%")
         self.sb_ram_bar.setValue(ram_p)
 
         # Telemetry for tray & thermal alerts
         try:
-            sensors_data = Sensors.get_all_sensors()
-            temps = sensors_data.get("Temperatures", [])
-            max_cpu_temp = None
-            for t in temps:
-                if t.get("Category") == "CPU" or "CPU" in t.get("Sensor", ""):
-                    v = t.get("Value")
-                    if v and (max_cpu_temp is None or v > max_cpu_temp):
-                        max_cpu_temp = v
+            if not is_demo_mode():
+                sensors_data = Sensors.get_all_sensors()
+                temps = sensors_data.get("Temperatures", [])
+                for t in temps:
+                    if t.get("Category") == "CPU" or "CPU" in t.get("Sensor", "") or "Package" in t.get("Sensor", ""):
+                        v = t.get("Value")
+                        if v and (max_cpu_temp is None or v > max_cpu_temp):
+                            max_cpu_temp = v
 
-            temp_str = f"{max_cpu_temp:.0f}°C" if max_cpu_temp else "--°C"
+            temp_str = f"{max_cpu_temp:.0f}°C" if max_cpu_temp is not None else "--°C"
+            self.sb_temp_lbl.setText(temp_str)
+
+            is_ru = (I18N.get_language() == "ru")
+            if max_cpu_temp is not None and max_cpu_temp >= 85.0:
+                self.sb_temp_lbl.setStyleSheet("color: #ef4444; font-weight: 700; font-size: 11px;")
+                self.sb_status_lbl.setText("⚠️ ВНИМАНИЕ: ПЕРЕГРЕВ" if is_ru else "⚠️ ALERT: OVERHEAT")
+                self.sb_status_lbl.setStyleSheet("color: #ef4444; font-weight: 700; font-size: 10px;")
+            elif max_cpu_temp is not None and max_cpu_temp >= 70.0:
+                self.sb_temp_lbl.setStyleSheet("color: #f59e0b; font-weight: 700; font-size: 11px;")
+                self.sb_status_lbl.setText("⚡ НАГРУЗКА ВЫШЕ НОРМЫ" if is_ru else "⚡ HIGH LOAD")
+                self.sb_status_lbl.setStyleSheet("color: #f59e0b; font-weight: 600; font-size: 10px;")
+            else:
+                self.sb_temp_lbl.setStyleSheet("color: #10b981; font-weight: 700; font-size: 11px;")
+                self.sb_status_lbl.setText("🛡️ СИСТЕМА: СТАБИЛЬНО" if is_ru else "🛡️ SYSTEM: OPTIMAL")
+                self.sb_status_lbl.setStyleSheet("color: #94a3b8; font-weight: 600; font-size: 10px;")
+
             tooltip_text = f"XUiDa64 Extreme Edition\nЦП: {cpu_p}% ({temp_str}) | ОЗУ: {ram_p}%"
             self.tray_icon.setToolTip(tooltip_text)
             self.tray_stat_act.setText(f"ЦП: {temp_str} ({cpu_p}%) | ОЗУ: {ram_p}%")

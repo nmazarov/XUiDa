@@ -13,6 +13,15 @@ class DiskBenchmark:
     @staticmethod
     def get_drives():
         """Returns list of active local storage partitions suitable for benchmarking."""
+        if os.environ.get("XUIDA_DEMO_MODE") == "1":
+            return [{
+                "device": "C:\\",
+                "mountpoint": "C:\\",
+                "fstype": "NTFS",
+                "free_gb": 1420.5,
+                "total_gb": 2000.0,
+                "percent_used": 29.0
+            }]
         drives = []
         for p in psutil.disk_partitions(all=False):
             if "cdrom" in p.opts or not p.fstype:
