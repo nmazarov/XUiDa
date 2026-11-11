@@ -34,6 +34,7 @@ def build():
         "--hidden-import=win32com.client",
         "--hidden-import=cryptography",
         "--hidden-import=cpuinfo",
+        "--hidden-import=PIL",
         "app.py"
     ]
 

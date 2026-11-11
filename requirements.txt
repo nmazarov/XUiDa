@@ -7,4 +7,5 @@ numpy>=1.24.0
 pyqtgraph>=0.13.3
 cryptography>=41.0.0
 GPUtil>=1.4.0
+Pillow>=10.0.0
 pyinstaller>=6.4.0
