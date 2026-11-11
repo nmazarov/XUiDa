@@ -1,6 +1,10 @@
 """
 XUiDa64 - Real-Time Sensor Dashboard View
-Displays live telemetry with gauges, sensor cards, category filters and high-contrast readable styling.
+Crafted according to Benji Taylor / Stageshow Design Engineering principles:
+- Live animated circular arc gauges with continuous OutCubic easing.
+- Restrained, elevated card hierarchy (#131824 -> #1a2232).
+- Segmented pill filter bar with active highlight states.
+- High-contrast, non-glare table data rows with crisp typography.
 """
 
 from PyQt5.QtWidgets import (
@@ -11,44 +15,37 @@ from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QColor, QFont
 from core.i18n import I18N, _t, _prop
 from core.sensors import Sensors
+from gui.widgets.animated_widgets import AnimatedDialGauge, LivePulseDot
 
-class MetricCard(QFrame):
-    def __init__(self, title, unit="", parent=None):
+class SensorMetricCard(QFrame):
+    """Elevated telemetry card containing an animated dial gauge and status indicators."""
+    def __init__(self, title, unit="%", min_val=0, max_val=100, accent_hex="#38bdf8", parent=None):
         super().__init__(parent)
         self.setStyleSheet("""
             QFrame {
-                background-color: #19212e;
-                border: 1px solid #2a364a;
-                border-radius: 8px;
-                padding: 10px;
+                background-color: #141b26;
+                border: 1px solid #222d3f;
+                border-radius: 10px;
+            }
+            QFrame:hover {
+                background-color: #1a2232;
+                border: 1px solid #38bdf8;
             }
         """)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 10, 12, 10)
-        layout.setSpacing(4)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(2)
 
-        self.title_lbl = QLabel(title)
-        self.title_lbl.setStyleSheet("color: #9ca3af; font-size: 11px; font-weight: bold; text-transform: uppercase; background: transparent;")
-        layout.addWidget(self.title_lbl)
-
-        self.value_lbl = QLabel("--")
-        self.value_lbl.setStyleSheet("color: #ffffff; font-size: 24px; font-weight: bold; background: transparent;")
-        layout.addWidget(self.value_lbl)
-
-        self.unit = unit
+        # Gauge in the center
+        self.gauge = AnimatedDialGauge(title=title, unit=unit, min_val=min_val, max_val=max_val, parent=self)
+        layout.addWidget(self.gauge, 0, Qt.AlignCenter)
 
     def set_title(self, title):
-        self.title_lbl.setText(title)
+        self.gauge.title = title
+        self.gauge.update()
 
-    def set_value(self, val, color=None):
-        unit_str = f" {self.unit}" if self.unit else ""
-        if isinstance(val, (int, float)):
-            self.value_lbl.setText(f"{val}{unit_str}")
-        else:
-            self.value_lbl.setText(f"{val}")
-
-        text_color = color if color else "#ffffff"
-        self.value_lbl.setStyleSheet(f"color: {text_color}; font-size: 24px; font-weight: bold; background: transparent;")
+    def set_value(self, val):
+        self.gauge.set_value(val)
 
 class SensorView(QWidget):
     def __init__(self, parent=None):
@@ -56,13 +53,13 @@ class SensorView(QWidget):
         self.current_filter = "All"
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
         # Top Control Row
         top_bar = QHBoxLayout()
         self.header_lbl = QLabel(_t("sensor_header"))
-        self.header_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #58a6ff;")
+        self.header_lbl.setStyleSheet("font-size: 15px; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px;")
         top_bar.addWidget(self.header_lbl)
         top_bar.addStretch()
 
@@ -73,17 +70,17 @@ class SensorView(QWidget):
 
         layout.addLayout(top_bar)
 
-        # Dashboard Metric Cards
+        # Dashboard Metric Cards with Animated Gauges
         cards_layout = QGridLayout()
-        cards_layout.setSpacing(10)
+        cards_layout.setSpacing(12)
 
         is_ru = (I18N.get_language() == "ru")
-        self.card_cpu_temp = MetricCard("Температура ЦП" if is_ru else "CPU Temperature", "°C")
-        self.card_gpu_temp = MetricCard("Температура GPU" if is_ru else "GPU Temperature", "°C")
-        self.card_cpu_load = MetricCard("Загрузка ЦП" if is_ru else "CPU Utilization", "%")
-        self.card_gpu_load = MetricCard("Загрузка GPU" if is_ru else "GPU Load", "%")
-        self.card_ram_load = MetricCard("Использование ОЗУ" if is_ru else "RAM Utilization", "%")
-        self.card_gpu_fan = MetricCard("Вентиляторы GPU" if is_ru else "GPU Fan Speed", "%")
+        self.card_cpu_temp = SensorMetricCard("Температура ЦП" if is_ru else "CPU Temp", "°C", 20, 105, "#38bdf8")
+        self.card_gpu_temp = SensorMetricCard("Температура GPU" if is_ru else "GPU Temp", "°C", 20, 100, "#10b981")
+        self.card_cpu_load = SensorMetricCard("Загрузка ЦП" if is_ru else "CPU Load", "%", 0, 100, "#38bdf8")
+        self.card_gpu_load = SensorMetricCard("Загрузка GPU" if is_ru else "GPU Load", "%", 0, 100, "#10b981")
+        self.card_ram_load = SensorMetricCard("ОЗУ Занято" if is_ru else "RAM Usage", "%", 0, 100, "#f59e0b")
+        self.card_gpu_fan = SensorMetricCard("Вентиляторы GPU" if is_ru else "GPU Fans", "%", 0, 100, "#a855f7")
 
         cards_layout.addWidget(self.card_cpu_temp, 0, 0)
         cards_layout.addWidget(self.card_gpu_temp, 0, 1)
@@ -94,9 +91,19 @@ class SensorView(QWidget):
 
         layout.addLayout(cards_layout)
 
-        # Category Filter Bar
-        filter_bar = QHBoxLayout()
-        filter_bar.setSpacing(6)
+        # Category Filter Bar - Modern Segmented Ribbon
+        filter_frame = QFrame()
+        filter_frame.setStyleSheet("""
+            QFrame {
+                background-color: #121824;
+                border: 1px solid #222d3f;
+                border-radius: 8px;
+                padding: 2px;
+            }
+        """)
+        filter_bar = QHBoxLayout(filter_frame)
+        filter_bar.setContentsMargins(4, 4, 4, 4)
+        filter_bar.setSpacing(4)
 
         self.btn_all = QPushButton(_t("sensor_all"))
         self.btn_temp = QPushButton(_t("sensor_temp"))
@@ -122,9 +129,9 @@ class SensorView(QWidget):
 
         self.btn_all.setChecked(True)
         filter_bar.addStretch()
-        layout.addLayout(filter_bar)
+        layout.addWidget(filter_frame)
 
-        # Detailed Sensor Table - UNIFORM BACKGROUND, NO ALTERNATING WHITE ROWS
+        # Detailed Sensor Table
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels([_t("col_sensor"), _t("col_value"), _t("col_unit"), _t("col_category")])
@@ -133,10 +140,11 @@ class SensorView(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
-        self.table.setAlternatingRowColors(False)  # Completely disables alternating white stripes!
+        self.table.verticalHeader().setDefaultSectionSize(28)
+        self.table.setAlternatingRowColors(False)
         layout.addWidget(self.table)
 
-        # Timer
+        # Telemetry Timer
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_sensors)
         self.timer.start(1200)
@@ -146,12 +154,12 @@ class SensorView(QWidget):
 
     def on_language_changed(self, lang):
         is_ru = (lang == "ru")
-        self.card_cpu_temp.set_title("Температура ЦП" if is_ru else "CPU Temperature")
-        self.card_gpu_temp.set_title("Температура GPU" if is_ru else "GPU Temperature")
-        self.card_cpu_load.set_title("Загрузка ЦП" if is_ru else "CPU Utilization")
+        self.card_cpu_temp.set_title("Температура ЦП" if is_ru else "CPU Temp")
+        self.card_gpu_temp.set_title("Температура GPU" if is_ru else "GPU Temp")
+        self.card_cpu_load.set_title("Загрузка ЦП" if is_ru else "CPU Load")
         self.card_gpu_load.set_title("Загрузка GPU" if is_ru else "GPU Load")
-        self.card_ram_load.set_title("Использование ОЗУ" if is_ru else "RAM Utilization")
-        self.card_gpu_fan.set_title("Вентиляторы GPU" if is_ru else "GPU Fan Speed")
+        self.card_ram_load.set_title("ОЗУ Занято" if is_ru else "RAM Usage")
+        self.card_gpu_fan.set_title("Вентиляторы GPU" if is_ru else "GPU Fans")
 
         self.header_lbl.setText(_t("sensor_header"))
         self.pause_btn.setText(_t("sensor_pause") if self.timer.isActive() else _t("sensor_resume"))
@@ -181,7 +189,7 @@ class SensorView(QWidget):
     def update_sensors(self):
         sensors = Sensors.get_all_sensors()
 
-        # Update Cards
+        # Update Cards with Animated Easing Gauges
         cpu_t = None
         gpu_t = None
         for item in sensors.get("Temperatures", []):
@@ -191,11 +199,9 @@ class SensorView(QWidget):
                 gpu_t = item.get("Value")
 
         if cpu_t is not None:
-            color = "#3fb950" if cpu_t < 65 else ("#d29922" if cpu_t < 80 else "#f85149")
-            self.card_cpu_temp.set_value(cpu_t, color)
+            self.card_cpu_temp.set_value(cpu_t)
         if gpu_t is not None:
-            color = "#3fb950" if gpu_t < 65 else ("#d29922" if gpu_t < 80 else "#f85149")
-            self.card_gpu_temp.set_value(gpu_t, color)
+            self.card_gpu_temp.set_value(gpu_t)
 
         for item in sensors.get("Usage", []):
             sensor_name = item.get("Sensor", "")
@@ -222,27 +228,33 @@ class SensorView(QWidget):
         else:
             items = sensors.get(self.current_filter, [])
 
-        bold_font = QFont("Segoe UI", 9, QFont.Bold)
+        bold_font = QFont("Segoe UI Variable Text", 9, QFont.Bold)
+        normal_font = QFont("Segoe UI Variable Text", 9, QFont.Normal)
 
         self.table.setRowCount(len(items))
         for row, item in enumerate(items):
-            # Sensor name (High contrast white, translated)
+            self.table.setRowHeight(row, 28)
+
+            # Sensor name (High contrast crisp text, translated)
             raw_sensor = item.get("Sensor", "")
             it0 = QTableWidgetItem(_prop(raw_sensor))
-            it0.setForeground(QColor("#ffffff"))
+            it0.setFont(normal_font)
+            it0.setForeground(QColor("#f8fafc"))
 
-            # Value (Electric blue, bold)
+            # Value (Electric cyan, bold)
             it1 = QTableWidgetItem(str(item.get("Value", "")))
-            it1.setForeground(QColor("#58a6ff"))
+            it1.setForeground(QColor("#38bdf8"))
             it1.setFont(bold_font)
 
             # Unit (Clean gray)
             it2 = QTableWidgetItem(item.get("Unit", ""))
-            it2.setForeground(QColor("#9ca3af"))
+            it2.setFont(normal_font)
+            it2.setForeground(QColor("#94a3b8"))
 
-            # Category (Soft blue, translated)
+            # Category (Soft cyan pill, translated)
             raw_cat = item.get("Category", "")
             it3 = QTableWidgetItem(_prop(raw_cat))
+            it3.setFont(normal_font)
             it3.setForeground(QColor("#93c5fd"))
 
             self.table.setItem(row, 0, it0)

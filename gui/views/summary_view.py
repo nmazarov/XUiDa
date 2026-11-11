@@ -1,7 +1,9 @@
 """
 XUiDa64 - Computer Summary View Widget
-Recreates classic AIDA64 Computer -> Summary layout with cyber metric chips,
-spanning section headers, uniform dark background, and high-contrast readable styling.
+Crafted with Benji Taylor / Stageshow Design Engineering principles:
+- Elevated interactive CraftCards with smooth hover animation and pulsing telemetry LED.
+- Cohesive typography, generous padding, and high-contrast readable properties.
+- Spanning section headers with crisp pill badges and subtle borders.
 """
 
 from PyQt5.QtWidgets import (
@@ -17,37 +19,30 @@ from core.memory_info import MemoryInfo
 from core.gpu_info import GPUInfo
 from core.storage_info import StorageInfo
 from core.network_info import NetworkInfo
+from gui.widgets.animated_widgets import CraftCard
 
 class SummaryView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(12)
 
-        # 1. Quick Metric Chips Banner
-        self.chips_frame = QFrame()
-        self.chips_frame.setStyleSheet("""
-            QFrame {
-                background-color: #161e2b;
-                border: 1px solid #2a364a;
-                border-radius: 8px;
-            }
-        """)
-        chips_layout = QHBoxLayout(self.chips_frame)
-        chips_layout.setContentsMargins(12, 8, 12, 8)
-        chips_layout.setSpacing(12)
+        # 1. Quick Metric CraftCards Banner
+        self.chips_layout = QHBoxLayout()
+        self.chips_layout.setContentsMargins(0, 0, 0, 0)
+        self.chips_layout.setSpacing(12)
 
-        self.chip_cpu = self._create_chip("⚙️ ЦП", "Intel Core i7", "#00d2ff")
-        self.chip_gpu = self._create_chip("🎮 GPU", "GeForce RTX", "#10b981")
-        self.chip_ram = self._create_chip("🧠 ОЗУ", "32 GB DDR5", "#f59e0b")
-        self.chip_os = self._create_chip("🪟 ОС", "Windows 11", "#a855f7")
+        self.card_cpu = CraftCard(title="ЦП / Processor", value="--", subtitle="--", accent_color="#38bdf8")
+        self.card_gpu = CraftCard(title="GPU / Графика", value="--", subtitle="--", accent_color="#10b981")
+        self.card_ram = CraftCard(title="ОЗУ / Память", value="--", subtitle="--", accent_color="#f59e0b")
+        self.card_os = CraftCard(title="ОС / Система", value="--", subtitle="--", accent_color="#a855f7")
 
-        chips_layout.addWidget(self.chip_cpu)
-        chips_layout.addWidget(self.chip_gpu)
-        chips_layout.addWidget(self.chip_ram)
-        chips_layout.addWidget(self.chip_os)
-        layout.addWidget(self.chips_frame)
+        self.chips_layout.addWidget(self.card_cpu)
+        self.chips_layout.addWidget(self.card_gpu)
+        self.chips_layout.addWidget(self.card_ram)
+        self.chips_layout.addWidget(self.card_os)
+        layout.addLayout(self.chips_layout)
 
         # 2. Detailed Summary Table Widget
         self.table = QTableWidget()
@@ -64,31 +59,6 @@ class SummaryView(QWidget):
 
         I18N.register_listener(self.on_language_changed)
         self.refresh_data()
-
-    def _create_chip(self, label, val, accent_hex):
-        chip = QFrame()
-        chip.setStyleSheet(f"""
-            QFrame {{
-                background-color: #1a2536;
-                border: 1px solid #2d3e56;
-                border-left: 4px solid {accent_hex};
-                border-radius: 6px;
-                padding: 4px 8px;
-            }}
-        """)
-        c_layout = QVBoxLayout(chip)
-        c_layout.setContentsMargins(8, 6, 8, 6)
-        c_layout.setSpacing(3)
-
-        lbl = QLabel(label)
-        lbl.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {accent_hex};")
-        val_lbl = QLabel(val)
-        val_lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #ffffff;")
-        val_lbl.setObjectName("chip_val")
-
-        c_layout.addWidget(lbl)
-        c_layout.addWidget(val_lbl)
-        return chip
 
     def on_language_changed(self, lang):
         self.table.setHorizontalHeaderLabels([_t("col_field"), _t("col_value")])
@@ -119,22 +89,34 @@ class SummaryView(QWidget):
         net_default = "Отсутствует" if is_ru else "None"
         smart_val = "Исправен (Норма)" if (is_ru and phys_drives) else ("Healthy / OK" if phys_drives else "OK")
 
-        # Update Top Chips
+        # Update Top CraftCards
         cpu_brand = cpu.get('Brand', 'Processor')
         cpu_short = cpu_brand.replace("Intel(R) Core(TM) ", "").replace("AMD Ryzen ", "Ryzen ")
-        self.chip_cpu.findChild(QLabel, "chip_val").setText(cpu_short[:22])
+        cpu_cores_str = f"{cpu.get('PhysicalCores', 0)}C / {cpu.get('LogicalCores', 0)}T • {cpu.get('BaseClock', '')}"
+        self.card_cpu.title_lbl.setText("ЦП / PROCESSOR" if is_ru else "CPU / PROCESSOR")
+        self.card_cpu.set_value(cpu_short[:24])
+        self.card_cpu.set_subtitle(cpu_cores_str)
 
         gpu_name = gpus[0].get("Name", "Graphics") if gpus else "Integrated GPU"
         gpu_short = gpu_name.replace("NVIDIA GeForce ", "").replace("AMD Radeon ", "")
-        self.chip_gpu.findChild(QLabel, "chip_val").setText(gpu_short[:22])
+        gpu_vram = f"{gpus[0].get('VRAM_MB', 0)} MB VRAM" if gpus and gpus[0].get('VRAM_MB') else ("DirectX 12" if gpus else "Standard VGA")
+        self.card_gpu.title_lbl.setText("GPU / ГРАФИКА" if is_ru else "GPU / GRAPHICS")
+        self.card_gpu.set_value(gpu_short[:24])
+        self.card_gpu.set_subtitle(gpu_vram)
 
         ram_total = mem.get("TotalGB", 16)
         spd_type = spd[0].get("MemoryType", "RAM") if spd and len(spd) > 0 else "RAM"
-        self.chip_ram.findChild(QLabel, "chip_val").setText(f"{ram_total} GB {spd_type}")
+        ram_sub = f"{used_word}: {mem.get('UsedGB', 0)} ГБ ({mem.get('Percent', 0)}%)" if is_ru else f"Used: {mem.get('UsedGB', 0)} GB ({mem.get('Percent', 0)}%)"
+        self.card_ram.title_lbl.setText("ОЗУ / ПАМЯТЬ" if is_ru else "RAM / MEMORY")
+        self.card_ram.set_value(f"{ram_total} GB {spd_type}")
+        self.card_ram.set_subtitle(ram_sub)
 
         os_name = sys_info.get("OSName", "Windows")
         os_short = os_name.replace("Microsoft Windows ", "Win ")
-        self.chip_os.findChild(QLabel, "chip_val").setText(os_short[:22])
+        os_sub = f"Сборка {sys_info.get('Build', '')} ({sys_info.get('Architecture', '')})" if is_ru else f"Build {sys_info.get('Build', '')} ({sys_info.get('Architecture', '')})"
+        self.card_os.title_lbl.setText("ОС / СИСТЕМА" if is_ru else "OS / SYSTEM")
+        self.card_os.set_value(os_short[:24])
+        self.card_os.set_subtitle(os_sub)
 
         dimm_text = f"Установлено модулей: {len(spd)} (" + ", ".join([f"{m.get('CapacityGB')} ГБ {m.get('MemoryType')}" for m in spd]) + ")" if is_ru else f"{len(spd)} Module(s) Installed (" + ", ".join([f"{m.get('CapacityGB')}GB {m.get('MemoryType')}" for m in spd]) + ")"
 
@@ -185,30 +167,33 @@ class SummaryView(QWidget):
         self.table.setRowCount(total_rows)
 
         curr_row = 0
-        bold_val_font = QFont("Segoe UI", 9, QFont.Bold)
+        bold_val_font = QFont("Segoe UI Variable Text", 9, QFont.Bold)
+        prop_font = QFont("Segoe UI Variable Text", 9, QFont.Normal)
 
         for sec_title, items in sections:
-            # Styled Spanning Section Header
-            h_item = QTableWidgetItem(f"   ▶  {sec_title.upper()}")
-            h_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
-            h_item.setForeground(QColor("#00d2ff"))
-            h_item.setBackground(QColor("#1b2738"))
+            # Styled Section Header with generous 34px height
+            self.table.setRowHeight(curr_row, 34)
+            h_item = QTableWidgetItem(f"   ❖  {sec_title.upper()}")
+            h_item.setFont(QFont("Segoe UI Variable Text", 10, QFont.Bold))
+            h_item.setForeground(QColor("#38bdf8"))
+            h_item.setBackground(QColor("#131924"))
 
             self.table.setItem(curr_row, 0, h_item)
             self.table.setSpan(curr_row, 0, 1, 2)
             curr_row += 1
 
             for prop, val in items:
+                self.table.setRowHeight(curr_row, 28)
                 p_item = QTableWidgetItem(f"    {_prop(prop)}")
-                p_item.setForeground(QColor("#cbd5e1"))
+                p_item.setFont(prop_font)
+                p_item.setForeground(QColor("#94a3b8"))
 
-                # Translate common boolean/status values
                 val_str = str(val)
                 if val_str in ("True", "False", "Healthy / OK", "OK"):
                     val_str = _prop(val_str)
 
                 v_item = QTableWidgetItem(val_str)
-                v_item.setForeground(QColor("#ffffff"))
+                v_item.setForeground(QColor("#f8fafc"))
                 v_item.setFont(bold_val_font)
 
                 self.table.setItem(curr_row, 0, p_item)

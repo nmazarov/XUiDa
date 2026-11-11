@@ -17,6 +17,7 @@ if BASE_DIR not in sys.path:
 
 from gui.widgets.splash_screen import CyberSplashScreen
 from gui.main_window import MainWindow
+from gui.styles import apply_dark_palette
 
 def main():
     # Enable High DPI scaling
@@ -31,6 +32,7 @@ def main():
         pass
 
     app = QApplication(sys.argv)
+    apply_dark_palette(app)
     app.setApplicationName("XUiDa64 Extreme Edition")
     app.setApplicationVersion("1.0.0")
     app.setOrganizationName("OpenAIDA Community")

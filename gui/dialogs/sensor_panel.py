@@ -58,24 +58,24 @@ class DesktopSensorPanel(QWidget):
         self.container = QFrame(self)
         self.container.setStyleSheet("""
             QFrame#hudContainer {
-                background-color: rgba(13, 18, 27, 0.94);
-                border: 1px solid #00d2ff;
-                border-radius: 10px;
+                background-color: rgba(11, 14, 20, 0.94);
+                border: 1px solid #38bdf8;
+                border-radius: 12px;
             }
             QLabel {
-                color: #ffffff;
-                font-family: 'Segoe UI', Arial;
+                color: #f8fafc;
+                font-family: 'Segoe UI Variable Text', 'Segoe UI', Arial;
             }
             QProgressBar {
-                background-color: #192231;
-                border: 1px solid #28364a;
-                border-radius: 4px;
+                background-color: #151b26;
+                border: 1px solid #222d3f;
+                border-radius: 5px;
                 text-align: center;
                 color: transparent;
             }
             QProgressBar::chunk {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #1f6feb, stop:1 #00d2ff);
-                border-radius: 3px;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #2563eb, stop:1 #38bdf8);
+                border-radius: 4px;
             }
         """)
         self.container.setObjectName("hudContainer")

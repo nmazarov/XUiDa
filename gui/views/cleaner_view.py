@@ -15,7 +15,7 @@ from PyQt5.QtGui import QColor, QFont, QIcon
 
 from core.cleaner import SystemCleaner
 from core.i18n import I18N, _t, _prop
-from gui.widgets.animated_widgets import AnimatedPushButton
+from gui.widgets.animated_widgets import AnimatedPushButton, CraftCard
 
 class ScanWorker(QThread):
     progress_sig = pyqtSignal(int, str)
@@ -83,55 +83,54 @@ class CleanerView(QWidget):
     def _init_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(10)
+        layout.setSpacing(12)
 
-        # 1. Top Summary Banner & Quick Stat Chips
+        # 1. Top Summary Banner (Full width)
         top_frame = QFrame()
         top_frame.setStyleSheet("""
             QFrame {
-                background-color: #161e2b;
-                border: 1px solid #2a364a;
+                background-color: #121824;
+                border: 1px solid #222d3f;
                 border-radius: 8px;
             }
         """)
         top_layout = QHBoxLayout(top_frame)
-        top_layout.setContentsMargins(16, 12, 16, 12)
-        top_layout.setSpacing(14)
+        top_layout.setContentsMargins(14, 10, 14, 10)
 
-        # Title Info
         title_box = QVBoxLayout()
-        title_box.setSpacing(3)
+        title_box.setSpacing(2)
         self.title_lbl = QLabel("🧹 Очистка системы и оптимизация дисков")
-        self.title_lbl.setStyleSheet("font-size: 16px; font-weight: bold; color: #58a6ff;")
-        self.subtitle_lbl = QLabel("Безопасное удаление временных файлов, кэша браузеров, дампов сбоев и корзины")
-        self.subtitle_lbl.setStyleSheet("font-size: 12px; color: #94a3b8;")
+        self.title_lbl.setStyleSheet("font-size: 15px; font-weight: 700; color: #38bdf8;")
+        self.subtitle_lbl = QLabel("Безопасное удаление временных файлов, кэша браузеров, дампов сбоев и системной корзины")
+        self.subtitle_lbl.setStyleSheet("font-size: 11px; color: #94a3b8;")
         title_box.addWidget(self.title_lbl)
         title_box.addWidget(self.subtitle_lbl)
-        top_layout.addLayout(title_box, 4)
+        top_layout.addLayout(title_box)
+        layout.addWidget(top_frame)
 
-        # Metric Chips (Junk size, Files count, Free space on C:)
+        # 2. Elevated Metric CraftCards (3 across)
         chips_layout = QHBoxLayout()
-        chips_layout.setSpacing(10)
+        chips_layout.setSpacing(12)
 
-        self.chip_junk = self._create_stat_chip("🗑️ Мусор", "--", "#f85149")
-        self.chip_files = self._create_stat_chip("📁 Файлов", "--", "#f59e0b")
+        self.chip_junk = self._create_stat_chip("МУСОР", "--", "#ef4444")
+        self.chip_junk.set_subtitle("Готово к анализу")
+        self.chip_files = self._create_stat_chip("ФАЙЛОВ", "--", "#f59e0b")
+        self.chip_files.set_subtitle("Временные файлы")
 
-        # Free space on C:
         free_c = "--"
         try:
             free_c = f"{psutil.disk_usage('C:').free / (1024**3):.1f} ГБ"
         except Exception:
             pass
-        self.chip_free = self._create_stat_chip("💾 Свободно C:", free_c, "#10b981")
+        self.chip_free = self._create_stat_chip("СВОБОДНО C:", free_c, "#10b981")
+        self.chip_free.set_subtitle("Системный раздел")
 
         chips_layout.addWidget(self.chip_junk)
         chips_layout.addWidget(self.chip_files)
         chips_layout.addWidget(self.chip_free)
-        top_layout.addLayout(chips_layout, 5)
+        layout.addLayout(chips_layout)
 
-        layout.addWidget(top_frame)
-
-        # 2. Controls & Actions Bar
+        # 3. Controls & Actions Bar
         ctrl_bar = QHBoxLayout()
         ctrl_bar.setSpacing(10)
 
@@ -141,22 +140,9 @@ class CleanerView(QWidget):
         self.scan_btn.clicked.connect(self.start_scan)
         ctrl_bar.addWidget(self.scan_btn)
 
-        self.clean_btn = AnimatedPushButton("🧹 Очистить мусор", is_primary=False)
+        self.clean_btn = AnimatedPushButton("🧹 Очистить мусор", is_danger=True)
         self.clean_btn.setFixedHeight(34)
         self.clean_btn.setMinimumWidth(160)
-        self.clean_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #da3633;
-                color: #ffffff;
-                font-weight: bold;
-                border: 1px solid #f85149;
-                border-radius: 6px;
-                padding: 6px 16px;
-            }
-            QPushButton:hover {
-                background-color: #f85149;
-            }
-        """)
         self.clean_btn.setEnabled(False)
         self.clean_btn.clicked.connect(self.start_cleaning)
         ctrl_bar.addWidget(self.clean_btn)
@@ -196,13 +182,13 @@ class CleanerView(QWidget):
         self.table.setAlternatingRowColors(False)
         self.table.setStyleSheet("""
             QTableWidget {
-                background-color: #141a24;
-                border: 1px solid #2a364a;
-                border-radius: 6px;
+                background-color: #10141d;
+                border: 1px solid #222d3f;
+                border-radius: 8px;
             }
             QTableWidget::item {
                 padding: 6px 10px;
-                border-bottom: 1px solid #1c2635;
+                border-bottom: 1px solid #1a2232;
             }
         """)
         layout.addWidget(self.table, 3)
@@ -211,9 +197,9 @@ class CleanerView(QWidget):
         log_frame = QFrame()
         log_frame.setStyleSheet("""
             QFrame {
-                background-color: #121822;
-                border: 1px solid #243042;
-                border-radius: 6px;
+                background-color: #121824;
+                border: 1px solid #222d3f;
+                border-radius: 8px;
             }
         """)
         log_layout = QVBoxLayout(log_frame)
@@ -254,31 +240,10 @@ class CleanerView(QWidget):
         self.init_categories_table()
 
     def _create_stat_chip(self, label, val, accent_hex):
-        chip = QFrame()
-        chip.setStyleSheet(f"""
-            QFrame {{
-                background-color: #1a2536;
-                border: 1px solid #2d3e56;
-                border-left: 4px solid {accent_hex};
-                border-radius: 6px;
-                padding: 6px 12px;
-                min-width: 120px;
-                min-height: 52px;
-            }}
-        """)
-        c_layout = QVBoxLayout(chip)
-        c_layout.setContentsMargins(8, 6, 8, 6)
-        c_layout.setSpacing(4)
-
-        lbl = QLabel(label)
-        lbl.setStyleSheet(f"font-size: 11px; font-weight: bold; color: {accent_hex}; background: transparent;")
-        val_lbl = QLabel(val)
-        val_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: #ffffff; background: transparent;")
-        val_lbl.setObjectName("chip_val")
-
-        c_layout.addWidget(lbl)
-        c_layout.addWidget(val_lbl)
-        return chip
+        clean_title = label.replace("🗑️ ", "").replace("📁 ", "").replace("💾 ", "").strip()
+        card = CraftCard(title=clean_title, value=val, subtitle="", accent_color=accent_hex)
+        card.setMinimumWidth(130)
+        return card
 
     def init_categories_table(self):
         raw_cats = SystemCleaner.get_cleanable_categories()
