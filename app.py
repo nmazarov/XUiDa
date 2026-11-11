@@ -35,7 +35,7 @@ def main():
     apply_dark_palette(app)
     app.setApplicationName("XUiDa64 Extreme Edition")
     app.setApplicationVersion("1.0.0")
-    app.setOrganizationName("OpenAIDA Community")
+    app.setOrganizationName("XUiDa Community")
 
     # Set Application Icon
     icon_path = os.path.join(BASE_DIR, "assets", "icon.png")
