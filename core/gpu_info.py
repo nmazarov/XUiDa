@@ -3,8 +3,14 @@ XUiDa64 - GPU & Display Information Module
 Direct NVML interface for NVIDIA cards + WMI / Win32 API fallback for AMD/Intel.
 """
 
+import sys
+import os
 import ctypes
-import win32com.client
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 
 try:
     from core.demo_profile import is_demo_mode, get_demo_gpus, get_demo_monitors
@@ -21,7 +27,14 @@ class GPUInfo:
             return cls._nvml is not None
         cls._nvml_loaded = True
         try:
-            cls._nvml = ctypes.CDLL("nvml.dll")
+            lib_name = "nvml.dll" if sys.platform == "win32" else "libnvidia-ml.so.1"
+            try:
+                cls._nvml = ctypes.CDLL(lib_name)
+            except Exception:
+                if sys.platform != "win32":
+                    cls._nvml = ctypes.CDLL("libnvidia-ml.so")
+                else:
+                    raise
             if cls._nvml.nvmlInit_v2() != 0:
                 cls._nvml = None
         except Exception:
@@ -109,8 +122,14 @@ class GPUInfo:
         nv_gpus = cls.get_nvidia_details()
         nv_map = {g["Name"]: g for g in nv_gpus}
 
+        if sys.platform != "win32":
+            if nv_gpus:
+                return nv_gpus
+            return [{"Name": "Generic Linux Display Adapter", "DriverVersion": "Kernel DRM", "VRAM_MB": 0, "Resolution": "Desktop"}]
+
         try:
-            wmi = win32com.client.GetObject("winmgmts:")
+            if win32com:
+                wmi = win32com.client.GetObject("winmgmts:")
             for v in wmi.InstancesOf("Win32_VideoController"):
                 name = getattr(v, "Name", "Video Controller").strip()
                 driver_ver = getattr(v, "DriverVersion", "Unknown").strip()
@@ -150,8 +169,12 @@ class GPUInfo:
         if is_demo_mode():
             return get_demo_monitors()
         monitors = []
+        if sys.platform != "win32":
+            return [{"Name": "Generic Linux Monitor"}]
+
         try:
-            wmi = win32com.client.GetObject("winmgmts:root\\wmi")
+            if win32com:
+                wmi = win32com.client.GetObject("winmgmts:root\\wmi")
             for m in wmi.InstancesOf("WmiMonitorID"):
                 user_friendly = m.UserFriendlyName
                 if user_friendly:

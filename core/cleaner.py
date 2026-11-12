@@ -24,13 +24,15 @@ class SystemCleaner:
         else:
             local_app_data = os.environ.get("LOCALAPPDATA", "")
             app_data = os.environ.get("APPDATA", "")
-            temp_dir = os.environ.get("TEMP", "")
+            temp_dir = os.environ.get("TEMP", "/tmp" if os.name != "nt" else "")
             windir = os.environ.get("WINDIR", "C:\\Windows")
+
+        user_cache = os.path.expanduser("~/.cache")
 
         categories = [
             {
                 "id": "recycle_bin",
-                "name": "Корзина Windows",
+                "name": "Корзина" if os.name != "nt" else "Корзина Windows",
                 "desc": "Удаленные файлы в системной корзине",
                 "icon": "🗑️",
                 "type": "recycle_bin",
@@ -48,11 +50,11 @@ class SystemCleaner:
             },
             {
                 "id": "sys_temp",
-                "name": "Системные временные файлы Windows",
-                "desc": f"Устаревшие системные файлы в {os.path.join(windir, 'Temp')}",
+                "name": "Системные временные файлы" if os.name != "nt" else "Системные временные файлы Windows",
+                "desc": f"Устаревшие системные файлы ({'/var/tmp' if os.name != 'nt' else os.path.join(windir, 'Temp')})",
                 "icon": "⚙️",
                 "type": "directory",
-                "paths": [os.path.join(windir, "Temp")] if os.path.exists(os.path.join(windir, "Temp")) else [],
+                "paths": (["/var/tmp"] if os.path.exists("/var/tmp") else []) if os.name != "nt" else ([os.path.join(windir, "Temp")] if os.path.exists(os.path.join(windir, "Temp")) else []),
                 "default": True
             },
             {
@@ -153,21 +155,37 @@ class SystemCleaner:
 
     @staticmethod
     def get_recycle_bin_stats() -> tuple:
-        """Returns (size_bytes, items_count) of Windows Recycle Bin."""
-        try:
-            class SHQUERYRBINFO(ctypes.Structure):
-                _fields_ = [
-                    ('cbSize', ctypes.c_ulong),
-                    ('i64Size', ctypes.c_int64),
-                    ('i64NumItems', ctypes.c_int64),
-                ]
-            rbinfo = SHQUERYRBINFO()
-            rbinfo.cbSize = ctypes.sizeof(SHQUERYRBINFO)
-            res = ctypes.windll.shell32.SHQueryRecycleBinW(None, ctypes.byref(rbinfo))
-            if res == 0:
-                return max(rbinfo.i64Size, 0), max(rbinfo.i64NumItems, 0)
-        except Exception:
-            pass
+        """Returns (size_bytes, items_count) of Windows Recycle Bin or Linux Trash."""
+        if hasattr(ctypes, "windll"):
+            try:
+                class SHQUERYRBINFO(ctypes.Structure):
+                    _fields_ = [
+                        ('cbSize', ctypes.c_ulong),
+                        ('i64Size', ctypes.c_int64),
+                        ('i64NumItems', ctypes.c_int64),
+                    ]
+                rbinfo = SHQUERYRBINFO()
+                rbinfo.cbSize = ctypes.sizeof(SHQUERYRBINFO)
+                res = ctypes.windll.shell32.SHQueryRecycleBinW(None, ctypes.byref(rbinfo))
+                if res == 0:
+                    return max(rbinfo.i64Size, 0), max(rbinfo.i64NumItems, 0)
+            except Exception:
+                pass
+        else:
+            # Linux Trash fallback (~/.local/share/Trash/files)
+            trash_dir = os.path.expanduser("~/.local/share/Trash/files")
+            if os.path.exists(trash_dir):
+                total_size = 0
+                count = 0
+                for root, _, files in os.walk(trash_dir):
+                    for f in files:
+                        fp = os.path.join(root, f)
+                        try:
+                            total_size += os.path.getsize(fp)
+                            count += 1
+                        except Exception:
+                            pass
+                return total_size, count
         return 0, 0
 
     @classmethod
@@ -244,20 +262,41 @@ class SystemCleaner:
 
         if cat_type == "recycle_bin":
             size, count = cls.get_recycle_bin_stats()
-            try:
-                # SHERB_NOCONFIRMATION (0x01) | SHERB_NOPROGRESSUI (0x02) | SHERB_NOSOUND (0x04) = 0x07
-                res = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 0x00000007)
-                if res == 0:
-                    freed_bytes += size
-                    deleted_files += count
-                    if log_callback:
-                        log_callback(f"✔ Очищена корзина Windows: освобождено {cls.format_size(size)}")
-                else:
+            if hasattr(ctypes, "windll"):
+                try:
+                    # SHERB_NOCONFIRMATION (0x01) | SHERB_NOPROGRESSUI (0x02) | SHERB_NOSOUND (0x04) = 0x07
+                    res = ctypes.windll.shell32.SHEmptyRecycleBinW(None, None, 0x00000007)
+                    if res == 0:
+                        freed_bytes += size
+                        deleted_files += count
+                        if log_callback:
+                            log_callback(f"✔ Очищена корзина: освобождено {cls.format_size(size)}")
+                    else:
+                        failed_files += 1
+                except Exception as e:
                     failed_files += 1
-            except Exception as e:
-                failed_files += 1
+                    if log_callback:
+                        log_callback(f"✖ Ошибка очистки корзины: {e}")
+            else:
+                trash_paths = [
+                    os.path.expanduser("~/.local/share/Trash/files"),
+                    os.path.expanduser("~/.local/share/Trash/info")
+                ]
+                for tp in trash_paths:
+                    if os.path.exists(tp):
+                        for item in os.listdir(tp):
+                            item_p = os.path.join(tp, item)
+                            try:
+                                if os.path.isdir(item_p):
+                                    shutil.rmtree(item_p, ignore_errors=True)
+                                else:
+                                    os.remove(item_p)
+                                deleted_files += 1
+                            except Exception:
+                                failed_files += 1
+                freed_bytes += size
                 if log_callback:
-                    log_callback(f"✖ Ошибка очистки корзины: {e}")
+                    log_callback(f"✔ Очищена корзина: освобождено {cls.format_size(size)}")
             return freed_bytes, deleted_files, failed_files
 
         for folder in paths:

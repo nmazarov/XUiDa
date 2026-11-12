@@ -5,7 +5,11 @@ XUiDa64 - Network Adapters & Traffic Monitor Module
 import time
 import socket
 import psutil
-import win32com.client
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 
 try:
     from core.demo_profile import is_demo_mode, get_demo_adapters
@@ -26,7 +30,8 @@ class NetworkInfo:
 
         wmi_details = {}
         try:
-            wmi = win32com.client.GetObject("winmgmts:")
+            if win32com:
+                wmi = win32com.client.GetObject("winmgmts:")
             for cfg in wmi.InstancesOf("Win32_NetworkAdapterConfiguration"):
                 if cfg.IPEnabled:
                     desc = getattr(cfg, "Description", "").strip()

@@ -4,15 +4,24 @@
 
 # ⚡ XUiDa64 Extreme Edition
 
-**Современный, высокопроизводительный и 100% открытый комплекс аппаратной диагностики и мониторинга ПК для Windows.**
+**Современный, высокопроизводительный и 100% открытый комплекс аппаратной диагностики и мониторинга ПК для Windows и Linux.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
-[![Platform: Windows 10%20%7C%2011%20x64](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20x64-0078D6.svg)](https://microsoft.com/windows)
+[![Platform: Windows & Linux x64](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20x64-0078D6.svg)](https://github.com/nmazarov/XUiDa/releases)
 [![GUI: PyQt5](https://img.shields.io/badge/GUI-PyQt5-green.svg)](https://riverbankcomputing.com/software/pyqt/)
-[![CI Build](https://github.com/nmazarov/XUiDa/actions/workflows/build.yml/badge.svg)](https://github.com/nmazarov/XUiDa/actions)
+[![CI Build & Release](https://github.com/nmazarov/XUiDa/actions/workflows/build.yml/badge.svg)](https://github.com/nmazarov/XUiDa/actions)
+[![Latest Release](https://img.shields.io/github/v/release/nmazarov/XUiDa?color=orange&label=Release)](https://github.com/nmazarov/XUiDa/releases/latest)
 
 *Без платных лицензий. Без триальных ограничений. Без закрытых системных драйверов. 100% Free & Open Source.*
+
+### 📥 [Скачать готовые сборки (Releases)](https://github.com/nmazarov/XUiDa/releases/latest)
+
+| Платформа | Формат | Описание | Ссылка на загрузку |
+| :--- | :---: | :--- | :---: |
+| 🪟 **Windows x64** | **`.exe` (Установщик)** | **Рекомендуется**: Мастер установки с ярлыками и деинсталлятором | [Скачать XUiDa64-Setup-v1.0.0.exe](https://github.com/nmazarov/XUiDa/releases/latest) |
+| 🪟 **Windows x64** | **`.zip` (Portable)** | Портативная версия без установки: распакуйте и запускайте | [Скачать XUiDa64-win64.zip](https://github.com/nmazarov/XUiDa/releases/latest) |
+| 🐧 **Linux x64** | **`.tar.gz` (Binary)** | Автономная сборка для Ubuntu / Debian / Fedora / Arch | [Скачать XUiDa64-linux-x64.tar.gz](https://github.com/nmazarov/XUiDa/releases/latest) |
 
 [Русское описание](#русское-описание) | [Скриншоты](#скриншоты-интерфейса) | [English Description](#english-description)
 
@@ -127,17 +136,23 @@ python app.py
 
 ---
 
-### 📦 Сборка в один автономный `.exe` файл
+### 📦 Сборка дистрибутивов (Windows & Linux)
 
-В проект включен скрипт автоматической сборки через PyInstaller с оптимизированным размером и вшитой векторной иконкой:
-
+#### Сборка исполняемого файла (PyInstaller)
+Скрипт кросс-платформенной сборки компилирует автономный бинарник:
 ```bash
 python build_exe.py
 ```
-После завершения готовый исполняемый файл `XUiDa64.exe`, не требующий установленного Python, будет доступен в:
-`dist/XUiDa64/XUiDa64.exe`.
+- **Windows**: создаёт `dist/XUiDa64/XUiDa64.exe`
+- **Linux**: создаёт исполняемый ELF-файл `dist/XUiDa64/XUiDa64`
 
-Готовый собранный архив также автоматически компилируется при каждом обновлении в [GitHub Actions](https://github.com/nmazarov/XUiDa/actions).
+#### Компиляция Windows-установщика (Inno Setup)
+```bash
+iscc installer/XUiDa64_Setup.iss
+```
+В результате генерируется официальный мастер установки `dist/XUiDa64-Setup-v1.0.0.exe`.
+
+Все релизы и архивы автоматически компилируются и публикуются в [GitHub Actions](https://github.com/nmazarov/XUiDa/actions).
 
 ---
 

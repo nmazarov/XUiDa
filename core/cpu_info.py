@@ -5,7 +5,11 @@ XUiDa64 - Processor & CPU Information Module
 import os
 import sys
 import psutil
-import win32com.client
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -47,19 +51,20 @@ class CPUInfo:
             }
 
             try:
-                wmi = win32com.client.GetObject("winmgmts:")
-                for p in wmi.InstancesOf("Win32_Processor"):
-                    wmi_details["Socket"] = getattr(p, "SocketDesignation", "LGA1700 / AM5")
-                    wmi_details["Voltage"] = f"{getattr(p, 'CurrentVoltage', 0) / 10.0:.2f} V" if getattr(p, 'CurrentVoltage', 0) else "Auto"
-                    if getattr(p, "L2CacheSize", None):
-                        wmi_details["L2Cache"] = f"{p.L2CacheSize} KB"
-                    if getattr(p, "L3CacheSize", None):
-                        wmi_details["L3Cache"] = f"{p.L3CacheSize // 1024} MB"
-                    if getattr(p, "MaxClockSpeed", None):
-                        wmi_details["MaxClock"] = f"{p.MaxClockSpeed} MHz"
-                    if getattr(p, "CurrentClockSpeed", None):
-                        wmi_details["CurrentClock"] = f"{p.CurrentClockSpeed} MHz"
-                    break
+                if win32com:
+                    wmi = win32com.client.GetObject("winmgmts:")
+                    for p in wmi.InstancesOf("Win32_Processor"):
+                        wmi_details["Socket"] = getattr(p, "SocketDesignation", "LGA1700 / AM5")
+                        wmi_details["Voltage"] = f"{getattr(p, 'CurrentVoltage', 0) / 10.0:.2f} V" if getattr(p, 'CurrentVoltage', 0) else "Auto"
+                        if getattr(p, "L2CacheSize", None):
+                            wmi_details["L2Cache"] = f"{p.L2CacheSize} KB"
+                        if getattr(p, "L3CacheSize", None):
+                            wmi_details["L3Cache"] = f"{p.L3CacheSize // 1024} MB"
+                        if getattr(p, "MaxClockSpeed", None):
+                            wmi_details["MaxClock"] = f"{p.MaxClockSpeed} MHz"
+                        if getattr(p, "CurrentClockSpeed", None):
+                            wmi_details["CurrentClock"] = f"{p.CurrentClockSpeed} MHz"
+                        break
             except Exception:
                 pass
             cls._cached_wmi_details = wmi_details

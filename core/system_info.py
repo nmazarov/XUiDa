@@ -2,13 +2,22 @@
 XUiDa64 - System, Motherboard, BIOS and OS Information Extractor
 """
 
+import sys
 import os
 import platform
 import subprocess
 import time
 import datetime
-import win32com.client
-import winreg
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
+
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 from core.demo_profile import (
     is_demo_mode, get_demo_os_info, get_demo_motherboard_info, get_demo_bios_info
@@ -26,8 +35,24 @@ class SystemInfo:
             "SerialNumber": "Unknown",
             "Chipset": "Intel/AMD Chipset"
         }
+        if sys.platform != "win32":
+            def read_dmi(name):
+                p = f"/sys/devices/virtual/dmi/id/{name}"
+                if os.path.exists(p):
+                    try:
+                        with open(p, "r") as f:
+                            return f.read().strip()
+                    except Exception:
+                        pass
+                return "Unknown"
+
+            info["Manufacturer"] = read_dmi("board_vendor")
+            info["Product"] = read_dmi("board_name")
+            info["Version"] = read_dmi("board_version")
+            info["SerialNumber"] = read_dmi("board_serial")
+            return info
         try:
-            wmi = win32com.client.GetObject("winmgmts:")
+            wmi = win32com.client.GetObject("winmgmts:") if win32com else None
             for b in wmi.InstancesOf("Win32_BaseBoard"):
                 info["Manufacturer"] = getattr(b, "Manufacturer", "Unknown").strip()
                 info["Product"] = getattr(b, "Product", "Unknown").strip()
@@ -47,10 +72,27 @@ class SystemInfo:
             "Version": "Unknown",
             "ReleaseDate": "Unknown",
             "SMBIOSVersion": "Unknown",
-            "BootMode": "UEFI" if os.path.exists(r"C:\Windows\Panther\setupact.log") else "Unknown"
+            "BootMode": "UEFI" if os.path.exists(r"C:\Windows\Panther\setupact.log") or os.path.exists("/sys/firmware/efi") else "Unknown"
         }
+        if sys.platform != "win32":
+            def read_dmi(name):
+                p = f"/sys/devices/virtual/dmi/id/{name}"
+                if os.path.exists(p):
+                    try:
+                        with open(p, "r") as f:
+                            return f.read().strip()
+                    except Exception:
+                        pass
+                return "Unknown"
+
+            info["Vendor"] = read_dmi("bios_vendor")
+            info["Version"] = read_dmi("bios_version")
+            info["ReleaseDate"] = read_dmi("bios_date")
+            info["BootMode"] = "UEFI" if os.path.exists("/sys/firmware/efi") else "Legacy BIOS"
+            info["SecureBoot"] = "Enabled" if os.path.exists("/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c") else "Disabled"
+            return info
         try:
-            wmi = win32com.client.GetObject("winmgmts:")
+            wmi = win32com.client.GetObject("winmgmts:") if win32com else None
             for b in wmi.InstancesOf("Win32_BIOS"):
                 info["Vendor"] = getattr(b, "Manufacturer", "Unknown").strip()
                 info["Version"] = getattr(b, "SMBIOSBIOSVersion", "Unknown").strip()
@@ -85,6 +127,30 @@ class SystemInfo:
         hours, rem = divmod(rem, 3600)
         minutes, seconds = divmod(rem, 60)
         uptime_str = f"{days}d {hours}h {minutes}m {seconds}s"
+
+        if sys.platform != "win32":
+            os_name = "Linux"
+            if os.path.exists("/etc/os-release"):
+                try:
+                    with open("/etc/os-release") as f:
+                        for line in f:
+                            if line.startswith("PRETTY_NAME="):
+                                os_name = line.split("=", 1)[1].strip().strip('"')
+                                break
+                except Exception:
+                    pass
+
+            return {
+                "OSName": os_name,
+                "Version": platform.release(),
+                "Architecture": platform.machine(),
+                "ComputerName": platform.node(),
+                "RegisteredUser": os.environ.get("USER", "user"),
+                "SystemRoot": "/",
+                "BootTime": boot_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "Uptime": uptime_str,
+                "InstallDate": "N/A"
+            }
 
         info = {
             "OSName": platform.system() + " " + platform.release(),

@@ -2,10 +2,16 @@
 XUiDa64 - Storage, Physical Drives & SMART Information Module
 """
 
+import sys
+import os
 import psutil
-import win32com.client
 import subprocess
 import json
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 
 try:
     from core.demo_profile import is_demo_mode, get_demo_physical_drives, get_demo_logical_drives
@@ -50,13 +56,37 @@ class StorageInfo:
             return cls._cached_physical_drives
 
         drives = []
+        if sys.platform != "win32":
+            if os.path.exists("/sys/block"):
+                for b in os.listdir("/sys/block"):
+                    if b.startswith("loop") or b.startswith("ram"):
+                        continue
+                    model_path = f"/sys/block/{b}/device/model"
+                    model = f"Block Device /dev/{b}"
+                    if os.path.exists(model_path):
+                        try:
+                            with open(model_path) as f:
+                                model = f.read().strip()
+                        except Exception:
+                            pass
+                    drives.append({
+                        "Model": model,
+                        "Interface": "NVMe" if "nvme" in b else "SATA/SCSI",
+                        "MediaType": "NVMe SSD" if "nvme" in b else "SSD/HDD",
+                        "SizeGB": 0,
+                        "Health": "OK (Healthy)"
+                    })
+            cls._cached_physical_drives = drives
+            return drives
+
         # Direct fast WMI MSFT_PhysicalDisk query without slow powershell process spawning
         media_types = {3: "HDD", 4: "SSD", 5: "SCM"}
         bus_types = {3: "ATAPI", 8: "SCSI", 11: "SATA", 17: "NVMe", 7: "USB"}
         storage_meta = {}
 
         try:
-            wmi_storage = win32com.client.GetObject(r"winmgmts:\\.\root\Microsoft\Windows\Storage")
+            if win32com:
+                wmi_storage = win32com.client.GetObject(r"winmgmts:\\.\root\Microsoft\Windows\Storage")
             for d in wmi_storage.InstancesOf("MSFT_PhysicalDisk"):
                 name = getattr(d, "FriendlyName", "").strip()
                 dev_id = str(getattr(d, "DeviceId", ""))

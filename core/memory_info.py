@@ -2,8 +2,13 @@
 XUiDa64 - Memory & SPD Information Module
 """
 
+import sys
 import psutil
-import win32com.client
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 
 try:
     from core.demo_profile import is_demo_mode, get_demo_memory_info, get_demo_spd_modules
@@ -44,8 +49,23 @@ class MemoryInfo:
         if is_demo_mode():
             return get_demo_spd_modules()
         modules = []
+        if sys.platform != "win32":
+            vm = psutil.virtual_memory()
+            total_gb = round(vm.total / (1024**3), 1)
+            modules.append({
+                "DeviceLocator": "DIMM System Memory",
+                "BankLabel": "BANK 0",
+                "CapacityGB": total_gb,
+                "SpeedMHz": "DDR4/DDR5",
+                "Manufacturer": "System RAM",
+                "PartNumber": "Standard Memory",
+                "SerialNumber": "N/A",
+                "MemoryType": "DDR4/DDR5"
+            })
+            return modules
         try:
-            wmi = win32com.client.GetObject("winmgmts:")
+            if win32com:
+                wmi = win32com.client.GetObject("winmgmts:")
             for m in wmi.InstancesOf("Win32_PhysicalMemory"):
                 cap_bytes = int(getattr(m, "Capacity", 0) or 0)
                 cap_gb = round(cap_bytes / (1024**3), 1)

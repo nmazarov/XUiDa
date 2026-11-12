@@ -2,14 +2,36 @@
 XUiDa64 - Software, Installed Apps, Services & Process Explorer Module
 """
 
+import sys
 import os
-import winreg
 import psutil
+
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 class SoftwareInfo:
     @staticmethod
     def get_installed_programs():
         programs = []
+        if sys.platform != "win32":
+            apps_dir = "/usr/share/applications"
+            if os.path.exists(apps_dir):
+                for f in os.listdir(apps_dir):
+                    if f.endswith(".desktop"):
+                        name = f[:-8].replace("-", " ").title()
+                        programs.append({
+                            "Name": name,
+                            "Version": "System App",
+                            "Publisher": "Linux",
+                            "InstallDate": "N/A"
+                        })
+            return programs
+
+        if not winreg:
+            return programs
+
         reg_keys = [
             (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", winreg.KEY_WOW64_64KEY),
             (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", winreg.KEY_WOW64_32KEY),
@@ -78,6 +100,21 @@ class SoftwareInfo:
     @staticmethod
     def get_startup_programs():
         startup = []
+        if sys.platform != "win32":
+            autostart_dir = os.path.expanduser("~/.config/autostart")
+            if os.path.exists(autostart_dir):
+                for f in os.listdir(autostart_dir):
+                    if f.endswith(".desktop"):
+                        startup.append({
+                            "Name": f[:-8],
+                            "Command": f"{autostart_dir}/{f}",
+                            "Location": "XDG Autostart"
+                        })
+            return startup
+
+        if not winreg:
+            return startup
+
         run_keys = [
             (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run"),
             (winreg.HKEY_CURRENT_USER, r"Software\Microsoft\Windows\CurrentVersion\Run")

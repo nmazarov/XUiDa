@@ -3,8 +3,13 @@ XUiDa64 - Real-Time Sensor Monitor Module
 Pulls live telemetry from ACPI Thermal Zones, NVML, Performance Counters and Storage.
 """
 
+import sys
 import psutil
-import win32com.client
+
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 from core.gpu_info import GPUInfo
 from core.network_info import NetworkInfo
 
@@ -29,8 +34,41 @@ class Sensors:
 
         # 1. CPU & Motherboard Temperatures
         cpu_temp = None
+        if hasattr(psutil, "sensors_temperatures"):
+            try:
+                hw_temps = psutil.sensors_temperatures()
+                if hw_temps:
+                    for name, entries in hw_temps.items():
+                        for entry in entries:
+                            data["Temperatures"].append({
+                                "Sensor": f"{name} {entry.label or ''}".strip(),
+                                "Value": round(entry.current, 1),
+                                "Unit": "°C",
+                                "Category": "CPU" if "cpu" in name.lower() or "core" in (entry.label or "").lower() else "Motherboard"
+                            })
+                            if cpu_temp is None and ("cpu" in name.lower() or "core" in (entry.label or "").lower()):
+                                cpu_temp = round(entry.current, 1)
+            except Exception:
+                pass
+
+        if hasattr(psutil, "sensors_fans"):
+            try:
+                hw_fans = psutil.sensors_fans()
+                if hw_fans:
+                    for name, entries in hw_fans.items():
+                        for entry in entries:
+                            data["Fans"].append({
+                                "Sensor": f"{name} {entry.label or ''}".strip(),
+                                "Value": entry.current,
+                                "Unit": "RPM",
+                                "Category": "Fans"
+                            })
+            except Exception:
+                pass
+
         try:
-            wmi_root = win32com.client.GetObject("winmgmts:root\\wmi")
+            if win32com:
+                wmi_root = win32com.client.GetObject("winmgmts:root\\wmi")
             for t in wmi_root.InstancesOf("MSAcpi_ThermalZoneTemperature"):
                 celsius = round((t.CurrentTemperature - 2732) / 10.0, 1)
                 if 10.0 <= celsius <= 120.0:
@@ -45,7 +83,7 @@ class Sensors:
         except Exception:
             pass
 
-        if cpu_temp is None:
+        if cpu_temp is None and win32com:
             try:
                 wmi = win32com.client.GetObject("winmgmts:")
                 for tz in wmi.InstancesOf("Win32_PerfFormattedData_Counters_ThermalZoneInformation"):

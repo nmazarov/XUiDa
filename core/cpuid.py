@@ -4,6 +4,7 @@ Executes native CPUID instructions and decodes processor flags, architecture, an
 """
 
 import os
+import sys
 import ctypes
 import struct
 
@@ -15,6 +16,10 @@ class CPUID:
     def _init_native(cls):
         if cls._func is not None:
             return cls._available
+
+        if sys.platform != "win32":
+            cls._available = False
+            return False
 
         try:
             # 64-bit Windows CPUID machine code:
@@ -89,7 +94,28 @@ class CPUID:
                 ]
             }
         if not cls._init_native():
-            return {"error": "CPUID execution unavailable"}
+            if sys.platform != "win32":
+                try:
+                    import cpuinfo
+                    c = cpuinfo.get_cpu_info()
+                    flags_list = c.get("flags", [])
+                    features = {f.upper(): True for f in flags_list}
+                    for common in ["MMX", "SSE", "SSE2", "SSE3", "SSSE3", "SSE4_1", "SSE4_2", "AVX", "AVX2", "FMA", "AES", "SHA"]:
+                        if common.lower() in flags_list:
+                            features[common.replace("_", ".")] = True
+                    return {
+                        "vendor": c.get("vendor_id_raw", "Linux"),
+                        "brand": c.get("brand_raw", "x86-64 Processor"),
+                        "family": c.get("family", 6),
+                        "model": c.get("model", 0),
+                        "stepping": c.get("stepping", 0),
+                        "logical_cores": c.get("count", 4),
+                        "features": features,
+                        "caches": []
+                    }
+                except Exception:
+                    pass
+            return {"error": "CPUID execution unavailable", "brand": "x86-64 Processor"}
 
         # Leaf 0: Vendor String & Max Leaf
         max_leaf, ebx, ecx, edx = cls.call(0, 0)

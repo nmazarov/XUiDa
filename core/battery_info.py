@@ -5,7 +5,10 @@ Gracefully handles desktop systems running on continuous AC power.
 """
 
 import psutil
-import win32com.client
+try:
+    import win32com.client
+except ImportError:
+    win32com = None
 
 class BatteryInfo:
     @staticmethod
@@ -28,36 +31,68 @@ class BatteryInfo:
         voltage_mv = None
         discharge_rate_mw = None
 
-        try:
-            wmi_wmi = win32com.client.GetObject("winmgmts:root\\wmi")
-            # Static Data (Design capacity, manufacturer, device name)
-            for item in wmi_wmi.InstancesOf("BatteryStaticData"):
-                designed_cap = getattr(item, "DesignedCapacity", None)
-                device_name = getattr(item, "DeviceName", None)
-                mfg = getattr(item, "Manufacturer", None)
-                chem_code = getattr(item, "Technology", None)
-                if chem_code == 1:
-                    chemistry = "Lithium-Ion (Li-Ion)"
-                elif chem_code == 2:
-                    chemistry = "Lithium-Polymer (Li-Po)"
-                elif chem_code == 0:
-                    chemistry = "Lead Acid"
-                break
+        if win32com:
+            try:
+                wmi_wmi = win32com.client.GetObject("winmgmts:root\\wmi")
+                # Static Data (Design capacity, manufacturer, device name)
+                for item in wmi_wmi.InstancesOf("BatteryStaticData"):
+                    designed_cap = getattr(item, "DesignedCapacity", None)
+                    device_name = getattr(item, "DeviceName", None)
+                    mfg = getattr(item, "Manufacturer", None)
+                    chem_code = getattr(item, "Technology", None)
+                    if chem_code == 1:
+                        chemistry = "Lithium-Ion (Li-Ion)"
+                    elif chem_code == 2:
+                        chemistry = "Lithium-Polymer (Li-Po)"
+                    elif chem_code == 0:
+                        chemistry = "Lead Acid"
+                    break
 
-            # Full Charged Capacity (Wear level indicator)
-            for item in wmi_wmi.InstancesOf("BatteryFullChargedCapacity"):
-                full_cap = getattr(item, "FullChargedCapacity", None)
-                break
+                # Full Charged Capacity (Wear level indicator)
+                for item in wmi_wmi.InstancesOf("BatteryFullChargedCapacity"):
+                    full_cap = getattr(item, "FullChargedCapacity", None)
+                    break
 
-            # Battery Status (Real-time discharge/charge rate)
-            for item in wmi_wmi.InstancesOf("BatteryStatus"):
-                voltage_mv = getattr(item, "Voltage", None)
-                rate = getattr(item, "DischargeRate", None)
-                if rate and rate > 0:
-                    discharge_rate_mw = rate
-                break
-        except Exception:
-            pass
+                # Battery Status (Real-time discharge/charge rate)
+                for item in wmi_wmi.InstancesOf("BatteryStatus"):
+                    voltage_mv = getattr(item, "Voltage", None)
+                    rate = getattr(item, "DischargeRate", None)
+                    if rate and rate > 0:
+                        discharge_rate_mw = rate
+                    break
+            except Exception:
+                pass
+        else:
+            # Linux /sys/class/power_supply fallback
+            import glob
+            import os
+            try:
+                bat_dirs = glob.glob("/sys/class/power_supply/BAT*")
+                if bat_dirs:
+                    bdir = bat_dirs[0]
+                    def read_sys(f):
+                        fp = os.path.join(bdir, f)
+                        if os.path.exists(fp):
+                            with open(fp, "r", encoding="utf-8", errors="ignore") as fp_in:
+                                return fp_in.read().strip()
+                        return None
+                    device_name = read_sys("model_name")
+                    mfg = read_sys("manufacturer")
+                    chemistry = read_sys("technology")
+                    e_full = read_sys("energy_full") or read_sys("charge_full")
+                    e_design = read_sys("energy_full_design") or read_sys("charge_full_design")
+                    v_now = read_sys("voltage_now")
+                    p_now = read_sys("power_now") or read_sys("current_now")
+                    if e_design:
+                        designed_cap = int(e_design) // 1000
+                    if e_full:
+                        full_cap = int(e_full) // 1000
+                    if v_now:
+                        voltage_mv = int(v_now) // 1000
+                    if p_now:
+                        discharge_rate_mw = abs(int(p_now)) // 1000
+            except Exception:
+                pass
 
         # 3. Query CIMV2 Win32_Battery fallback
         if not device_name or not mfg:
